@@ -60,7 +60,7 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
         let bytes = file_handle.as_slice();
 
         let byte_hash = match hash_type {
-            HashType::Fast => {hash_sha3(Vec::from(bytes))}
+            HashType::Fast => {hash_md5(Vec::from(bytes))}
             HashType::Full => {hash_sha3(Vec::from(bytes))}
         };
 
@@ -83,6 +83,15 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
 }
 
 fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
+    let mut hasher = Sha3_256::new();
+    let mut bytes_to_hash = BytesMut::new();
+
+    bytes_to_hash.put_slice(&*bytes);
+    hasher.update(bytes_to_hash);
+    hasher.finalize().to_vec()
+}
+
+fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
 
