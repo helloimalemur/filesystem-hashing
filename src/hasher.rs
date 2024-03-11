@@ -39,6 +39,9 @@ pub fn hash_file(path: &Path) -> Result<(String, u64, Vec<u8>), Error> {
 
     if let Ok(metadata) = fs::metadata(full_path) {
         size = metadata.size();
+        ctime = metadata.ctime();
+        mtime = metadata.mtime();
+        ino = metadata.ino();
     }
 
     if let Ok(file_handle) = fs::read(path) {
