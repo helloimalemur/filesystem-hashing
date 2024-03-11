@@ -14,6 +14,9 @@ pub struct FileMetadata {
     path: String,
     check_sum: Vec<u8>,
     size: u64,
+    ino: u64,
+    ctime: i64,
+    mtime: i64,
 }
 
 impl Snapshot {
@@ -29,11 +32,14 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    if let Ok((path, size, check_sum)) = hash_file(p.path()){
+                    if let Ok((path, hash_result)) = hash_file(p.path()){
                         file_hashes.insert(p.path().to_str().unwrap().to_string(), FileMetadata {
                             path,
-                            check_sum,
-                            size,
+                            check_sum: hash_result.check_sum,
+                            size: hash_result.size,
+                            ino: hash_result.ino,
+                            ctime: hash_result.ctime,
+                            mtime: hash_result.mtime,
                         });
                     }
                 }
@@ -52,10 +58,12 @@ mod tests {
     #[test]
     fn create_snapshot() {
 
-        let test_snap = Snapshot::new(Path::new("/"));
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs"));
+        // let test_snap = Snapshot::new(Path::new("/etc"));
+        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/"));
         // println!("{}", test_snap.file_hashes.len());
         //
+
+        println!("Sample: {:#?}", test_snap.file_hashes.iter().last());
 
         println!("Files: {}", test_snap.file_hashes.len());
 
