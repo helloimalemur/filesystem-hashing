@@ -34,8 +34,6 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    // let _ = hash_files(p.path(), file_hashes.clone());
-
                     let bind = file_hashes.clone();
 
                     let handle = thread::spawn(move || {
