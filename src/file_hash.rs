@@ -1,11 +1,11 @@
 use std::fs;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Bytes, Read};
 use std::path::Path;
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 
-pub fn hash_file(path: &Path) {
+pub fn hash_file(path: &Path) -> BytesMut {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
@@ -13,8 +13,7 @@ pub fn hash_file(path: &Path) {
         let bytes = file_handle.as_slice();
         bytes_to_hash.put_slice(bytes);
         hasher.update(bytes_to_hash);
-        file_hash.put_slice(hasher.finalize().as_slice());
-        println!("{file_hash:?}")
+        file_hash.put_slice(hasher.finalize().as_ref());
     }
-    // file_hash
+    file_hash
 }
