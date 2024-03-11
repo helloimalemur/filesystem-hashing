@@ -15,8 +15,9 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
             full_path.push_str(cwd.to_str().unwrap());
             full_path.push_str("/");
             full_path.push_str(path.to_str().unwrap().split("./").last().unwrap());
-            println!("{}", full_path);
         }
+    } else {
+        full_path.push_str(path.to_str().unwrap());
     }
 
     if let Ok(file_handle) = fs::read(path) {
@@ -24,7 +25,6 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
         bytes_to_hash.put_slice(bytes);
         hasher.update(bytes_to_hash);
         file_hash.put_slice(hasher.finalize().as_ref());
-        // println!("{:?}", file_hash)
     }
 
     (path.to_str().unwrap().to_string(), file_hash.len(), file_hash.to_vec())
