@@ -12,7 +12,6 @@ pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
     let mut file_hash = BytesMut::new();
     let mut size = 0u64;
 
-
     let mut full_path = String::new();
     if path.starts_with("./") {
         if let Ok(cwd) = env::current_dir() {
@@ -22,6 +21,14 @@ pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
         }
     } else {
         full_path.push_str(path.to_str().unwrap());
+    }
+
+    let blacklist: Vec<&str> = vec!["/proc", "/tmp"];
+
+    for entry in blacklist {
+        if full_path.starts_with(entry) {
+            return ("".to_string(), 0u64, vec![])
+        }
     }
 
     if let Ok(metadata) = fs::metadata(full_path) {
