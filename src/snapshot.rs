@@ -33,8 +33,12 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    if let Ok(result) = hash_files(p.path(), file_hashes.clone()) {
-                    }
+                    let _ = hash_files(p.path(), file_hashes.clone());
+
+                    // let bind = file_hashes.clone();
+                    // (move || {
+                    //     let _ = hash_files(p.path(), bind);
+                    // })()
                 }
             }
         }
@@ -52,7 +56,7 @@ mod tests {
     fn create_snapshot() {
 
         // let test_snap = Snapshot::new(Path::new("/etc"));
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"));
+        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs"));
         // println!("{}", test_snap.file_hashes.len());
         //
 
