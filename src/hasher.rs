@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::io::{Read};
 use std::path::Path;
 use sha3::{Digest, Sha3_256};
@@ -8,6 +8,17 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
+
+    let mut full_path = String::new();
+    if path.starts_with("./") {
+        if let Ok(cwd) = env::current_dir() {
+            full_path.push_str(cwd.to_str().unwrap());
+            full_path.push_str("/");
+            full_path.push_str(path.to_str().unwrap().split("./").last().unwrap());
+            println!("{}", full_path);
+        }
+    }
+
     if let Ok(file_handle) = fs::read(path) {
         let bytes = file_handle.as_slice();
         bytes_to_hash.put_slice(bytes);
