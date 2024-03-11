@@ -68,7 +68,8 @@ mod tests {
         // let test_snap = Snapshot::new(Path::new("/etc"));
         // let test_snap = Snapshot::new(Path::new("/home/foxx/IdeaProjects"), HashType::Full);
 
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Full);
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
+        let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
