@@ -59,11 +59,9 @@ mod tests {
 
     #[test]
     fn create_snapshot() {
-
-        // let test_snap = Snapshot::new(Path::new("/etc"));
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"));
-        // println!("{}", test_snap.file_hashes.len());
-        //
+        // let test_snap = Snapshot::new(Path::new("/"));
+        let test_snap = Snapshot::new(Path::new("/etc"));
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"));
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
