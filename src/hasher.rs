@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 use sha3::digest::block_buffer::Error;
-use crate::snapshot::FileMetadata;
+use crate::snapshot::{FileMetadata, HashType};
 
 pub struct HashResult {
     pub check_sum: Vec<u8>,
@@ -18,11 +18,9 @@ pub struct HashResult {
     pub mtime: i64,
 }
 
-pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>) -> Result<(), Error> {
+pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>, hash_type: HashType) -> Result<(), Error> {
     let mut fh_lock = file_hashes.lock().unwrap();
-    let mut hasher = Sha3_256::new();
-    let mut bytes_to_hash = BytesMut::new();
-    let mut file_hash = BytesMut::new();
+
 
     let mut full_path = String::new();
     if path.starts_with("./") {
@@ -55,11 +53,15 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
         ino = metadata.ino();
     }
 
+
+    let mut file_hash = BytesMut::new();
+
     if let Ok(file_handle) = fs::read(path) {
         let bytes = file_handle.as_slice();
-        bytes_to_hash.put_slice(bytes);
-        hasher.update(bytes_to_hash);
-        file_hash.put_slice(hasher.finalize().as_ref());
+
+        let byte_hash = hash_sha3(Vec::from(bytes));
+
+        file_hash.put_slice(&byte_hash);
     } else {
         return Err(Error)
     }
@@ -75,4 +77,13 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
     });
 
     Ok(())
+}
+
+fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
+    let mut hasher = Sha3_256::new();
+    let mut bytes_to_hash = BytesMut::new();
+
+    bytes_to_hash.put_slice(&*bytes);
+    hasher.update(bytes_to_hash);
+    hasher.finalize().to_vec()
 }

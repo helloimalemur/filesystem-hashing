@@ -7,7 +7,8 @@ use std::thread::JoinHandle;
 use rand::{Rng, thread_rng};
 use crate::hasher::hash_files;
 
-enum HashType {
+#[derive(Clone, Copy)]
+pub enum HashType {
     Fast,
     Full
 }
@@ -41,7 +42,7 @@ impl Snapshot {
                     let bind = file_hashes.clone();
 
                     let handle = thread::spawn(move || {
-                        let _ = hash_files(p.path(), bind);
+                        let _ = hash_files(p.path(), bind, hash_type);
                     });
                     hashers.push(handle)
                 }
@@ -65,9 +66,9 @@ mod tests {
     fn create_snapshot() {
         // let test_snap = Snapshot::new(Path::new("/"));
         // let test_snap = Snapshot::new(Path::new("/etc"));
-        let test_snap = Snapshot::new(Path::new("/home/foxx/IdeaProjects"), HashType::Full);
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/IdeaProjects"), HashType::Full);
 
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"));
+        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Full);
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
