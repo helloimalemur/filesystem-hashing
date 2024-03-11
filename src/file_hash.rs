@@ -5,7 +5,7 @@ use std::path::Path;
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 
-pub fn hash_file(path: &Path) -> BytesMut {
+pub fn hash_file(path: &Path) -> Vec<u8> {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
@@ -14,6 +14,7 @@ pub fn hash_file(path: &Path) -> BytesMut {
         bytes_to_hash.put_slice(bytes);
         hasher.update(bytes_to_hash);
         file_hash.put_slice(hasher.finalize().as_ref());
+        // println!("{:?}", file_hash)
     }
-    file_hash
+    file_hash.to_vec()
 }

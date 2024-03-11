@@ -1,4 +1,3 @@
-mod file;
 mod snapshot;
 mod file_hash;
 

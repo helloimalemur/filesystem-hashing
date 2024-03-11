@@ -1,18 +1,17 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
-use std::str::Bytes;
-use bytes::Bytes;
 use crate::file_hash::hash_file;
 
+#[derive(Debug)]
 struct Snapshot {
     file_hashes: HashMap<String, FileMetadata>,
     uuid: String
 }
-
+#[derive(Debug)]
 pub struct FileMetadata {
     path: String,
-    check_sum: Bytes,
+    check_sum: Vec<u8>,
     size: u128,
 }
 
@@ -25,14 +24,18 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    let hash_bytes: Bytes = hash_file(p.path());
+                    file_hashes.insert(p.path().to_str().unwrap().to_string(), FileMetadata {
+                        path: p.path().to_str().unwrap().to_string(),
+                        check_sum: hash_file(p.path()),
+                        size: 0,
+                    });
                 }
             }
         }
 
 
 
-        Snapshot { file_hashes: Default::default(), uuid: "".to_string() }
+        Snapshot { file_hashes, uuid: "".to_string() }
     }
 }
 
@@ -45,6 +48,7 @@ mod tests {
     fn create_snapshot() {
 
         let test_snap = Snapshot::new(Path::new("./"));
+        // println!("{:?}", test_snap)
 
         // assert_eq!(result, 4);
     }
