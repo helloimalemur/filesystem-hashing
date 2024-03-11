@@ -4,7 +4,7 @@ use std::fs::{Metadata, Permissions};
 use std::io::{Read};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 use sha3::digest::block_buffer::Error;
@@ -18,8 +18,8 @@ pub struct HashResult {
     pub mtime: i64,
 }
 
-pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>, hash_type: HashType) -> Result<(), Error> {
-    let mut fh_lock = file_hashes.lock().unwrap();
+pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>, hash_type: HashType) -> Result<(), Error> {
+    // let mut fh_lock = file_hashes.lock().unwrap();
 
 
     let mut full_path = String::new();
@@ -70,7 +70,7 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
     }
 
 
-    fh_lock.insert(path.to_str().unwrap().to_string(), FileMetadata {
+    file_hashes.insert(path.to_str().unwrap().to_string(), FileMetadata {
         path: path.to_str().unwrap().to_string(),
         check_sum: file_hash.to_vec(),
         size,

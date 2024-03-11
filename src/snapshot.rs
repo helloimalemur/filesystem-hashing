@@ -42,7 +42,9 @@ impl Snapshot {
                     let bind = file_hashes.clone();
 
                     let handle = thread::spawn(move || {
-                        let _ = hash_files(p.path(), bind, hash_type);
+                        let mut binding = bind.lock();
+                        let ht = binding.as_mut().unwrap();
+                        let _ = hash_files(p.path(), ht, hash_type);
                     });
                     hashers.push(handle)
                 }
@@ -70,8 +72,9 @@ mod tests {
 
         // let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/var/"), HashType::Fast); // danger
-        let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
+        // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
+        let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"), HashType::Fast);
 
