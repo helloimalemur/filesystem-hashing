@@ -3,6 +3,7 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::thread::JoinHandle;
 use rand::{Rng, thread_rng};
 use crate::hasher::hash_files;
 
@@ -26,10 +27,9 @@ impl Snapshot {
         let mut rand = thread_rng();
         let uuid_int: i128 = rand.gen();
         let uuid = uuid_int.to_string();
-
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
-
         let mut file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> = Arc::new(Mutex::new(HashMap::new()));
+        let mut hashers: Vec<JoinHandle<()>> = vec![];
 
         for path in file_paths {
             if let Ok(p) = path {
@@ -38,11 +38,16 @@ impl Snapshot {
 
                     let bind = file_hashes.clone();
 
-                    thread::spawn(move || {
+                    let handle = thread::spawn(move || {
                         let _ = hash_files(p.path(), bind);
                     });
+                    hashers.push(handle)
                 }
             }
+        }
+
+        for handle in hashers {
+            handle.join().expect("could not join handle")
         }
 
         Snapshot { file_hashes, uuid }
@@ -58,12 +63,11 @@ mod tests {
     fn create_snapshot() {
 
         // let test_snap = Snapshot::new(Path::new("/etc"));
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs"));
+        let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"));
         // println!("{}", test_snap.file_hashes.len());
         //
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
-
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
 
         // for fi in test_snap.file_hashes.iter() {
