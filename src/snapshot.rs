@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use rand::{Rng, thread_rng};
 use crate::hasher::hash_files;
 
@@ -33,12 +34,13 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    let _ = hash_files(p.path(), file_hashes.clone());
+                    // let _ = hash_files(p.path(), file_hashes.clone());
 
-                    // let bind = file_hashes.clone();
-                    // (move || {
-                    //     let _ = hash_files(p.path(), bind);
-                    // })()
+                    let bind = file_hashes.clone();
+
+                    thread::spawn(move || {
+                        let _ = hash_files(p.path(), bind);
+                    });
                 }
             }
         }
