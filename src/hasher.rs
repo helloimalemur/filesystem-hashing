@@ -1,11 +1,14 @@
 use std::{env, fs};
+use std::collections::HashMap;
 use std::fs::{Metadata, Permissions};
 use std::io::{Read};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 use sha3::digest::block_buffer::Error;
+use crate::snapshot::FileMetadata;
 
 pub struct HashResult {
     pub check_sum: Vec<u8>,
@@ -15,7 +18,8 @@ pub struct HashResult {
     pub mtime: i64,
 }
 
-pub fn hash_file(path: &Path) -> Result<(String, HashResult), Error> {
+pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>) -> Result<(), Error> {
+    let mut fh_lock = file_hashes.lock().unwrap();
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
@@ -60,13 +64,15 @@ pub fn hash_file(path: &Path) -> Result<(String, HashResult), Error> {
         return Err(Error)
     }
 
-    let hash_result = HashResult {
+
+    fh_lock.insert(path.to_str().unwrap().to_string(), FileMetadata {
+        path: path.to_str().unwrap().to_string(),
         check_sum: file_hash.to_vec(),
         size,
         ino,
         ctime,
-        mtime
-    };
+        mtime,
+    });
 
-    Ok((path.to_str().unwrap().to_string(), hash_result))
+    Ok(())
 }

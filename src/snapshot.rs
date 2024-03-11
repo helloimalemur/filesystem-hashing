@@ -1,22 +1,23 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use rand::{Rng, thread_rng};
-use crate::hasher::hash_file;
+use crate::hasher::hash_files;
 
 #[derive(Debug)]
 pub struct Snapshot {
-    pub file_hashes: HashMap<String, FileMetadata>,
+    pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
     uuid: String
 }
 #[derive(Debug)]
 pub struct FileMetadata {
-    path: String,
-    check_sum: Vec<u8>,
-    size: u64,
-    ino: u64,
-    ctime: i64,
-    mtime: i64,
+    pub path: String,
+    pub check_sum: Vec<u8>,
+    pub size: u64,
+    pub ino: u64,
+    pub ctime: i64,
+    pub mtime: i64,
 }
 
 impl Snapshot {
@@ -27,20 +28,12 @@ impl Snapshot {
 
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
 
-        let mut file_hashes: HashMap<String, FileMetadata> = HashMap::new();
+        let mut file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> = Arc::new(Mutex::new(HashMap::new()));
 
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
-                    if let Ok((path, hash_result)) = hash_file(p.path()){
-                        file_hashes.insert(p.path().to_str().unwrap().to_string(), FileMetadata {
-                            path,
-                            check_sum: hash_result.check_sum,
-                            size: hash_result.size,
-                            ino: hash_result.ino,
-                            ctime: hash_result.ctime,
-                            mtime: hash_result.mtime,
-                        });
+                    if let Ok(result) = hash_files(p.path(), file_hashes.clone()){
                     }
                 }
             }
@@ -63,9 +56,9 @@ mod tests {
         // println!("{}", test_snap.file_hashes.len());
         //
 
-        println!("Sample: {:#?}", test_snap.file_hashes.iter().last());
+        println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
 
-        println!("Files: {}", test_snap.file_hashes.len());
+        println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
 
         // for fi in test_snap.file_hashes.iter() {
         //     println!("{}", fi.0)
