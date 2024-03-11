@@ -52,7 +52,9 @@ mod tests {
     fn create_snapshot() {
 
         let test_snap = Snapshot::new(Path::new("./"));
-        println!("{}", test_snap.file_hashes.len())
+        println!("{}", test_snap.file_hashes.len());
+
+        println!("{:#?}", test_snap)
 
         // assert_eq!(result, 4);
     }
