@@ -4,8 +4,8 @@ use std::path::Path;
 use crate::file_hash::hash_file;
 
 #[derive(Debug)]
-struct Snapshot {
-    file_hashes: HashMap<String, FileMetadata>,
+pub struct Snapshot {
+    pub file_hashes: HashMap<String, FileMetadata>,
     uuid: String
 }
 #[derive(Debug)]
@@ -47,8 +47,8 @@ mod tests {
     #[test]
     fn create_snapshot() {
 
-        let test_snap = Snapshot::new(Path::new("./"));
-        // println!("{:?}", test_snap)
+        let test_snap = Snapshot::new(Path::new("/etc/"));
+        println!(files: "{}", test_snap)
 
         // assert_eq!(result, 4);
     }
