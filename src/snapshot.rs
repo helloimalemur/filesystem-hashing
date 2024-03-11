@@ -13,7 +13,7 @@ pub struct Snapshot {
 pub struct FileMetadata {
     path: String,
     check_sum: Vec<u8>,
-    size: usize,
+    size: u64,
 }
 
 impl Snapshot {

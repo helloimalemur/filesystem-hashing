@@ -1,13 +1,17 @@
 use std::{env, fs};
+use std::fs::Metadata;
 use std::io::{Read};
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 
-pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
+pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
+    let mut size = 0u64;
+
 
     let mut full_path = String::new();
     if path.starts_with("./") {
@@ -20,7 +24,9 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
         full_path.push_str(path.to_str().unwrap());
     }
 
-    
+    if let Ok(metadata) = fs::metadata(full_path) {
+        size = metadata.size();
+    }
 
     if let Ok(file_handle) = fs::read(path) {
         let bytes = file_handle.as_slice();
@@ -29,5 +35,5 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
         file_hash.put_slice(hasher.finalize().as_ref());
     }
 
-    (path.to_str().unwrap().to_string(), file_hash.len(), file_hash.to_vec())
+    (path.to_str().unwrap().to_string(), size, file_hash.to_vec())
 }
