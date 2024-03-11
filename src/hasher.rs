@@ -20,6 +20,8 @@ pub fn hash_file(path: &Path) -> (String, usize, Vec<u8>) {
         full_path.push_str(path.to_str().unwrap());
     }
 
+    
+
     if let Ok(file_handle) = fs::read(path) {
         let bytes = file_handle.as_slice();
         bytes_to_hash.put_slice(bytes);
