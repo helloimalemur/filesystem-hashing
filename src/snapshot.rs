@@ -12,7 +12,7 @@ pub struct Snapshot {
 pub struct FileMetadata {
     path: String,
     check_sum: Vec<u8>,
-    size: u128,
+    size: usize,
 }
 
 impl Snapshot {
@@ -24,16 +24,15 @@ impl Snapshot {
         for path in file_paths {
             if let Ok(p) = path {
                 if p.path().is_file() {
+                    let (path, size, check_sum) = hash_file(p.path());
                     file_hashes.insert(p.path().to_str().unwrap().to_string(), FileMetadata {
-                        path: p.path().to_str().unwrap().to_string(),
-                        check_sum: hash_file(p.path()),
-                        size: 0,
+                        path,
+                        check_sum,
+                        size,
                     });
                 }
             }
         }
-
-
 
         Snapshot { file_hashes, uuid: "".to_string() }
     }
