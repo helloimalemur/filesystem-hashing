@@ -7,6 +7,10 @@ use std::thread::JoinHandle;
 use rand::{Rng, thread_rng};
 use crate::hasher::hash_files;
 
+enum HashType {
+    Fast,
+    Full
+}
 #[derive(Debug)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
@@ -23,7 +27,7 @@ pub struct FileMetadata {
 }
 
 impl Snapshot {
-    fn new(path: &Path) -> Snapshot {
+    fn new(path: &Path, hash_type: HashType) -> Snapshot {
         let mut rand = thread_rng();
         let uuid_int: i128 = rand.gen();
         let uuid = uuid_int.to_string();
@@ -60,7 +64,9 @@ mod tests {
     #[test]
     fn create_snapshot() {
         // let test_snap = Snapshot::new(Path::new("/"));
-        let test_snap = Snapshot::new(Path::new("/etc"));
+        // let test_snap = Snapshot::new(Path::new("/etc"));
+        let test_snap = Snapshot::new(Path::new("/home/foxx/IdeaProjects"), HashType::Full);
+
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"));
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
