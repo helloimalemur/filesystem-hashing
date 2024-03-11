@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
+use rand::{Rng, thread_rng};
 use crate::hasher::hash_file;
 
 #[derive(Debug)]
@@ -17,6 +18,10 @@ pub struct FileMetadata {
 
 impl Snapshot {
     fn new(path: &Path) -> Snapshot {
+        let mut rand = thread_rng();
+        let uuid_int: i128 = rand.gen();
+        let uuid = uuid_int.to_string();
+
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
 
         let mut file_hashes: HashMap<String, FileMetadata> = HashMap::new();
@@ -34,7 +39,7 @@ impl Snapshot {
             }
         }
 
-        Snapshot { file_hashes, uuid: "".to_string() }
+        Snapshot { file_hashes, uuid }
     }
 }
 
