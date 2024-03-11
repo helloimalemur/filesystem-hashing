@@ -51,11 +51,16 @@ mod tests {
     #[test]
     fn create_snapshot() {
 
-        let test_snap = Snapshot::new(Path::new("/var"));
+        let test_snap = Snapshot::new(Path::new("/etc"));
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs"));
         // println!("{}", test_snap.file_hashes.len());
         //
-        // println!("{:#?}", test_snap)
+
+        println!("Files: {}", test_snap.file_hashes.len())
+
+        // for fi in test_snap.file_hashes.iter() {
+        //     println!("{}", fi.0)
+        // }
 
         // assert_eq!(result, 4);
     }
