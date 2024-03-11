@@ -64,12 +64,14 @@ mod tests {
 
     #[test]
     fn create_snapshot() {
-        // let test_snap = Snapshot::new(Path::new("/"));
-        // let test_snap = Snapshot::new(Path::new("/etc"));
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/IdeaProjects"), HashType::Full);
+
 
         // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
+
+        // let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
+        // let test_snap = Snapshot::new(Path::new("/var/"), HashType::Fast);
         let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
+
 
         println!("Sample: {:#?}", test_snap.file_hashes.lock().unwrap().iter().last());
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
@@ -77,7 +79,5 @@ mod tests {
         // for fi in test_snap.file_hashes.iter() {
         //     println!("{}", fi.0)
         // }
-
-        // assert_eq!(result, 4);
     }
 }
