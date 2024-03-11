@@ -1,6 +1,5 @@
 use std::fs;
-use std::fs::File;
-use std::io::{Bytes, Read};
+use std::io::{Read};
 use std::path::Path;
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
-use crate::file_hash::hash_file;
+use crate::hasher::hash_file;
 
 #[derive(Debug)]
 pub struct Snapshot {

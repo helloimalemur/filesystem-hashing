@@ -1,5 +1,5 @@
 mod snapshot;
-mod file_hash;
+mod hasher;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
