@@ -47,8 +47,8 @@ mod tests {
     #[test]
     fn create_snapshot() {
 
-        let test_snap = Snapshot::new(Path::new("/etc/"));
-        println!(files: "{}", test_snap)
+        let test_snap = Snapshot::new(Path::new("./"));
+        println!("{}", test_snap.file_hashes.len())
 
         // assert_eq!(result, 4);
     }
