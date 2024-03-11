@@ -59,7 +59,10 @@ pub fn hash_files(path: &Path, file_hashes: Arc<Mutex<HashMap<String, FileMetada
     if let Ok(file_handle) = fs::read(path) {
         let bytes = file_handle.as_slice();
 
-        let byte_hash = hash_sha3(Vec::from(bytes));
+        let byte_hash = match hash_type {
+            HashType::Fast => {hash_sha3(Vec::from(bytes))}
+            HashType::Full => {hash_sha3(Vec::from(bytes))}
+        };
 
         file_hash.put_slice(&byte_hash);
     } else {
