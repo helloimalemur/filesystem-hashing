@@ -1,12 +1,13 @@
 use std::{env, fs};
-use std::fs::Metadata;
 use std::io::{Read};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
+use sha3::digest::block_buffer::Error;
 
-pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
+
+pub fn hash_file(path: &Path) -> Result<(String, u64, Vec<u8>), Error> {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
@@ -27,7 +28,7 @@ pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
 
     for entry in blacklist {
         if full_path.starts_with(entry) {
-            return ("".to_string(), 0u64, vec![])
+            return Err(Error)
         }
     }
 
@@ -42,5 +43,5 @@ pub fn hash_file(path: &Path) -> (String, u64, Vec<u8>) {
         file_hash.put_slice(hasher.finalize().as_ref());
     }
 
-    (path.to_str().unwrap().to_string(), size, file_hash.to_vec())
+    Ok((path.to_str().unwrap().to_string(), size, file_hash.to_vec()))
 }
