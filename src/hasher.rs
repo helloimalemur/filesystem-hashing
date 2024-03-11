@@ -1,4 +1,5 @@
 use std::{env, fs};
+use std::fs::Permissions;
 use std::io::{Read};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
@@ -12,6 +13,10 @@ pub fn hash_file(path: &Path) -> Result<(String, u64, Vec<u8>), Error> {
     let mut bytes_to_hash = BytesMut::new();
     let mut file_hash = BytesMut::new();
     let mut size = 0u64;
+    let mut ino = 0u64;
+    let mut ctime = 0i64;
+    let mut mtime = 0i64;
+
 
     let mut full_path = String::new();
     if path.starts_with("./") {
