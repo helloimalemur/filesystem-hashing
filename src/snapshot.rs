@@ -73,7 +73,7 @@ mod tests {
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Full); // safe
         let start = SystemTime::now();
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
-        let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::Fast);
         let stop = SystemTime::now();
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);
