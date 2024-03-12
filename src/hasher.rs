@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use sha3::{Digest, Sha3_256};
 use bytes::{BufMut, BytesMut};
 use sha3::digest::block_buffer::Error;
+use log::error;
 use crate::snapshot::{FileMetadata, HashType};
 
 pub struct HashResult {
@@ -19,18 +20,31 @@ pub struct HashResult {
 }
 
 pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>, hash_type: HashType) -> Result<(), Error> {
-    // let mut fh_lock = file_hashes.lock().unwrap();
-
 
     let mut full_path = String::new();
     if path.starts_with("./") {
         if let Ok(cwd) = env::current_dir() {
-            full_path.push_str(cwd.to_str().unwrap());
+            match cwd.to_str() {
+                None => {return Err(Error)}
+                Some(c) => {full_path.push_str(c)}
+            }
             full_path.push_str("/");
-            full_path.push_str(path.to_str().unwrap().split("./").last().unwrap());
+
+            match path.to_str() {
+                None => {return Err(Error)}
+                Some(p) => {
+                    match p.split("./").last() {
+                        None => {return Err(Error)}
+                        Some(p) => { full_path.push_str(p) }
+                    }
+                }
+            }
         }
     } else {
-        full_path.push_str(path.to_str().unwrap());
+        match path.to_str() {
+            None => {return Err(Error)}
+            Some(p) => {full_path.push_str(p);}
+        }
     }
 
     let blacklist: Vec<&str> = vec!["/proc", "/tmp"];
@@ -71,15 +85,20 @@ pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, File
         return Err(Error)
     }
 
+    match path.to_str() {
+        None => {return Err(Error)}
+        Some(p) => {
+            file_hashes.insert(p.to_string(), FileMetadata {
+                path: p.to_string(),
+                check_sum: file_hash.to_vec(),
+                size,
+                ino,
+                ctime,
+                mtime,
+            });
+        }
+    }
 
-    file_hashes.insert(path.to_str().unwrap().to_string(), FileMetadata {
-        path: path.to_str().unwrap().to_string(),
-        check_sum: file_hash.to_vec(),
-        size,
-        ino,
-        ctime,
-        mtime,
-    });
     drop(file_hash);
     Ok(())
 }
