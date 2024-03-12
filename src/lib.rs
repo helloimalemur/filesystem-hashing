@@ -1,9 +1,15 @@
+use std::path::Path;
+use crate::hasher::HashType;
+use crate::snapshot::Snapshot;
+
 mod hasher;
 mod snapshot;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+pub fn create_snapshot(path: &str, hash_type: HashType) -> Snapshot {
+    Snapshot::new(Path::new("/etc"), hash_type)
 }
+
+
 
 // #[cfg(test)]
 // mod tests {
