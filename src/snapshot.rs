@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
+use chrono::Utc;
 
 
 #[derive(Debug)]
@@ -13,7 +14,7 @@ pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
     root_path: String,
     uuid: String,
-    date_created: SystemTime
+    date_created: i64
 }
 #[derive(Debug)]
 pub struct FileMetadata {
@@ -40,6 +41,10 @@ impl Default for FileMetadata {
 
 impl Snapshot {
     pub fn new(path: &Path, hash_type: HashType) -> Snapshot {
+        let root_path = match path.to_str() {
+            None => {"".to_string()}
+            Some(p) => {p.to_string()}
+        };
         let mut rand = thread_rng();
         let uuid_int: i128 = rand.gen();
         let uuid = uuid_int.to_string();
@@ -65,13 +70,13 @@ impl Snapshot {
             handle.join().expect("could not join handle")
         }
 
-        Snapshot { file_hashes, uuid }
+        Snapshot { file_hashes, root_path, uuid, date_created: Utc::now().timestamp() }
     }
 }
 
 impl Default for Snapshot {
     fn default() -> Self {
-        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), uuid: "".to_string() }
+        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), root_path: "".to_string(), uuid: "".to_string(), date_created: 0 }
     }
 }
 
