@@ -1,6 +1,6 @@
 #### Fasching
 
-## Track Filesystem Integrity via "Snapshots" containing md5 or sha3 hash of all files within specified directories.
+## Track Filesystem Integrity via "Snapshots" containing hash of all files within specified directories.
     Create Snapshots    
     Compare Snapshots
 
