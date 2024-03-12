@@ -22,6 +22,19 @@ pub struct FileMetadata {
     pub mtime: i64,
 }
 
+impl Default for FileMetadata {
+    fn default() -> Self {
+        FileMetadata {
+            path: "".to_string(),
+            check_sum: vec![],
+            size: 0,
+            ino: 0,
+            ctime: 0,
+            mtime: 0,
+        }
+    }
+}
+
 impl Snapshot {
     pub fn new(path: &Path, hash_type: HashType) -> Snapshot {
         let mut rand = thread_rng();
@@ -50,6 +63,12 @@ impl Snapshot {
         }
 
         Snapshot { file_hashes, uuid }
+    }
+}
+
+impl Default for Snapshot {
+    fn default() -> Self {
+        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), uuid: "".to_string() }
     }
 }
 

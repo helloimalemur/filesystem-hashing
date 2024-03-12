@@ -2,7 +2,7 @@ use std::path::Path;
 use crate::hasher::HashType;
 use crate::snapshot::Snapshot;
 
-mod hasher;
+pub mod hasher;
 pub mod snapshot;
 
 pub fn create_snapshot(path: &str, hash_type: HashType) -> Snapshot {
