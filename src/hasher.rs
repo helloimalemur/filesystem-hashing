@@ -80,7 +80,7 @@ pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, File
         ctime,
         mtime,
     });
-
+    drop(file_hash);
     Ok(())
 }
 
