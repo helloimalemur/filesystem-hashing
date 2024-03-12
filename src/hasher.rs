@@ -94,6 +94,5 @@ fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
 }
 
 fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
-    let mut bytes_to_hash = BytesMut::new();
     md5::compute(bytes).to_vec()
 }
