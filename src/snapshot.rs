@@ -13,6 +13,7 @@ use chrono::Utc;
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
     pub root_path: String,
+    pub hash_type: HashType,
     pub uuid: String,
     pub date_created: i64
 }
@@ -70,13 +71,13 @@ impl Snapshot {
             handle.join().expect("could not join handle")
         }
 
-        Snapshot { file_hashes, root_path, uuid, date_created: Utc::now().timestamp() }
+        Snapshot { file_hashes, root_path, hash_type, uuid, date_created: Utc::now().timestamp() }
     }
 }
 
 impl Default for Snapshot {
     fn default() -> Self {
-        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), root_path: "".to_string(), uuid: "".to_string(), date_created: 0 }
+        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), root_path: "".to_string(), hash_type: HashType::BLAKE3, uuid: "".to_string(), date_created: 0 }
     }
 }
 

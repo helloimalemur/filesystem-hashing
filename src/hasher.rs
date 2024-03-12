@@ -9,7 +9,7 @@ use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum HashType {
     MD5,
     SHA3,
