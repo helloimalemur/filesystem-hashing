@@ -1,7 +1,13 @@
 [package]
 name = "Fasching"
-version = "0.1.0"
+description = "Track Filesystem Integrity via 'Snapshots' containing md5 or sha3 hash of all files within specified directories."
+version = "0.1.1"
 edition = "2021"
+authors = ["james@koonts.net"]
+license = "MIT"
+repository = "https://github.com/helloimalemur/fasching"
+keywords = ["httping", "http", "ping", "ping-http"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
