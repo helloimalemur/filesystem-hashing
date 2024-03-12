@@ -105,7 +105,6 @@ pub fn hash_files(
     Ok(())
 }
 
-#[allow(unused)]
 fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
@@ -114,7 +113,7 @@ fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
     hasher.update(bytes_to_hash);
     hasher.finalize().to_vec()
 }
-#[allow(unused)]
+
 fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
     md5::compute(bytes).to_vec()
 }

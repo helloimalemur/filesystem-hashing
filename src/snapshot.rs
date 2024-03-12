@@ -72,18 +72,18 @@ mod tests {
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Full); // safe
         let start = SystemTime::now();
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
+        let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
         let stop = SystemTime::now();
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);
 
-        let start2 = SystemTime::now();
-        let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
-        let stop2 = SystemTime::now();
-        let lapsed2 = stop2.duration_since(start2).unwrap();
-        println!("{:?}", lapsed2);
+        // let start2 = SystemTime::now();
+        // // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
+        // let test_snap = Snapshot::new(Path::new("/bin"), HashType::Full);
+        // let stop2 = SystemTime::now();
+        // let lapsed2 = stop2.duration_since(start2).unwrap();
+        // println!("{:?}", lapsed2);
 
 
        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
