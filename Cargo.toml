@@ -1,5 +1,5 @@
 [package]
-name = "fasching"
+name = "Fasching"
 description = "Track Filesystem Integrity via 'Snapshots' containing hash of all files within specified directories."
 version = "0.1.5"
 edition = "2021"
