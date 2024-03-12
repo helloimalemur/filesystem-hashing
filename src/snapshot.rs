@@ -1,4 +1,4 @@
-use crate::hasher::hash_files;
+use crate::hasher::{hash_files, HashType};
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::path::Path;
@@ -6,11 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
-#[derive(Clone, Copy)]
-pub enum HashType {
-    Fast,
-    Full,
-}
+
 #[derive(Debug)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
@@ -72,7 +68,7 @@ mod tests {
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Full); // safe
         let start = SystemTime::now();
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::Fast);
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
         let stop = SystemTime::now();
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);

@@ -1,4 +1,4 @@
-use crate::snapshot::{FileMetadata, HashType};
+use crate::snapshot::{FileMetadata};
 use bytes::{BufMut, BytesMut};
 use sha3::digest::block_buffer::Error;
 use sha3::{Digest, Sha3_256};
@@ -8,6 +8,13 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
+
+#[derive(Clone, Copy)]
+pub enum HashType {
+    MD5,
+    SHA3,
+    BLAKE3
+}
 
 pub struct HashResult {
     pub check_sum: Vec<u8>,
@@ -74,8 +81,9 @@ pub fn hash_files(
         let bytes = file_handle.as_slice();
 
         let byte_hash = match hash_type {
-            HashType::Fast => hash_md5(Vec::from(bytes)),
-            HashType::Full => hash_sha3(Vec::from(bytes)),
+            HashType::MD5 => hash_md5(Vec::from(bytes)),
+            HashType::SHA3 => hash_sha3(Vec::from(bytes)),
+            HashType::BLAKE3 => hash_blake3(Vec::from(bytes))
         };
 
         file_hash.put_slice(&byte_hash);
@@ -116,4 +124,8 @@ fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
 
 fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
     md5::compute(bytes).to_vec()
+}
+
+fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
+    blake3::hash(bytes.as_slice()).as_bytes().to_vec()
 }
