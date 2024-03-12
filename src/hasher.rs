@@ -51,6 +51,7 @@ pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, File
         ctime = metadata.ctime();
         mtime = metadata.mtime();
         ino = metadata.ino();
+        drop(metadata);
     }
 
 
@@ -65,6 +66,7 @@ pub fn hash_files(path: &Path, file_hashes: &mut MutexGuard<HashMap<String, File
         };
 
         file_hash.put_slice(&byte_hash);
+        drop(byte_hash);
     } else {
         return Err(Error)
     }

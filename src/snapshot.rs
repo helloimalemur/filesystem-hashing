@@ -28,7 +28,7 @@ pub struct FileMetadata {
 }
 
 impl Snapshot {
-    fn new(path: &Path, hash_type: HashType) -> Snapshot {
+    pub fn new(path: &Path, hash_type: HashType) -> Snapshot {
         let mut rand = thread_rng();
         let uuid_int: i128 = rand.gen();
         let uuid = uuid_int.to_string();
