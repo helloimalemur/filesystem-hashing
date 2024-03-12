@@ -3,7 +3,7 @@ use crate::hasher::HashType;
 use crate::snapshot::Snapshot;
 
 mod hasher;
-mod snapshot;
+pub mod snapshot;
 
 pub fn create_snapshot(path: &str, hash_type: HashType) -> Snapshot {
     Snapshot::new(Path::new("/etc"), hash_type)
