@@ -12,9 +12,9 @@ use chrono::Utc;
 #[derive(Debug)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
-    root_path: String,
-    uuid: String,
-    date_created: i64
+    pub root_path: String,
+    pub uuid: String,
+    pub date_created: i64
 }
 #[derive(Debug)]
 pub struct FileMetadata {
