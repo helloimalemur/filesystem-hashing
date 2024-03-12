@@ -67,13 +67,12 @@ mod tests {
     #[test]
     fn create_snapshot() {
 
-
         // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
 
         // let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/var/"), HashType::Fast); // danger
-        let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
+        // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
+        let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"), HashType::Fast);
