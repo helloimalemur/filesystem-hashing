@@ -1,7 +1,7 @@
 [package]
 name = "Fasching"
 description = "Track Filesystem Integrity via 'Snapshots' containing hash of all files within specified directories."
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 authors = ["james@koonts.net"]
 license = "MIT"

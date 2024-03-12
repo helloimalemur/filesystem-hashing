@@ -5,12 +5,15 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::SystemTime;
 
 
 #[derive(Debug)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
+    root_path: String,
     uuid: String,
+    date_created: SystemTime
 }
 #[derive(Debug)]
 pub struct FileMetadata {
