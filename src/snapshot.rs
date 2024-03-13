@@ -81,7 +81,7 @@ impl Default for Snapshot {
     }
 }
 
-enum SnapshotChangeType {
+pub enum SnapshotChangeType {
     None,
     Created,
     Deleted,
