@@ -112,13 +112,14 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
 
                 match right.file_hashes.lock() {
                     Ok(curr_lock) => {
-                        // check for deletion
-                        if !curr_lock.contains_key(left_entry.0) {
-                            deleted.push(left_entry.0.to_string());
-                        }
 
                         match curr_lock.get(left_entry.0) {
                             Some(right_entry) => {
+
+                                // check for deletion
+                                if !curr_lock.contains_key(left_entry.0) {
+                                    deleted.push(left_entry.0.to_string());
+                                }
 
                                 // check for mis-matching checksum
                                 if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
@@ -188,7 +189,7 @@ mod tests {
 
         let start2 = SystemTime::now();
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        let test_snap2 = Snapshot::new(Path::new("/bin"), HashType::MD5);
+        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::MD5);
         let stop2 = SystemTime::now();
         let lapsed2 = stop2.duration_since(start2).unwrap();
         println!("{:?}", lapsed2);
