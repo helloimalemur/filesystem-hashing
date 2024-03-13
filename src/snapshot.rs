@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use chrono::Utc;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
     pub root_path: String,
@@ -17,7 +17,7 @@ pub struct Snapshot {
     pub uuid: String,
     pub date_created: i64
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub path: String,
     pub check_sum: Vec<u8>,
@@ -185,12 +185,19 @@ mod tests {
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);
 
-        // let start2 = SystemTime::now();
-        // // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        // let test_snap = Snapshot::new(Path::new("/bin"), HashType::Full);
-        // let stop2 = SystemTime::now();
-        // let lapsed2 = stop2.duration_since(start2).unwrap();
-        // println!("{:?}", lapsed2);
+
+        let start2 = SystemTime::now();
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
+        let test_snap2 = Snapshot::new(Path::new("/bin"), HashType::MD5);
+        let stop2 = SystemTime::now();
+        let lapsed2 = stop2.duration_since(start2).unwrap();
+        println!("{:?}", lapsed2);
+
+        let result = compare(test_snap.clone(), test_snap2.clone());
+        let compare_result = result.unwrap().1;
+        println!("Created: {}", compare_result.created.len());
+        println!("Deleted: {}", compare_result.deleted.len());
+        println!("Changed: {}", compare_result.changed.len());
 
 
        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
