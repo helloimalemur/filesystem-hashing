@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use chrono::Utc;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
     pub root_path: String,
@@ -17,7 +17,7 @@ pub struct Snapshot {
     pub uuid: String,
     pub date_created: i64
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub path: String,
     pub check_sum: Vec<u8>,
@@ -81,6 +81,91 @@ impl Default for Snapshot {
     }
 }
 
+pub enum SnapshotChangeType {
+    None,
+    Created,
+    Deleted,
+    Changed
+}
+
+#[derive(Debug)]
+pub struct SnapshotCompareResult {
+    created: Vec<String>,
+    deleted: Vec<String>,
+    changed: Vec<String>
+}
+
+pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
+    let mut success = true;
+    let mut created: Vec<String> = vec![];
+    let mut deleted: Vec<String> = vec![];
+    let mut changed: Vec<String> = vec![];
+
+
+
+    match left.file_hashes.lock() {
+        Ok(mut left_lock) => {
+
+            // for each entry in the hash list
+            for left_entry in left_lock.iter() {
+
+
+                match right.file_hashes.lock() {
+                    Ok(curr_lock) => {
+
+                        match curr_lock.get(left_entry.0) {
+                            Some(right_entry) => {
+
+                                // check for deletion
+                                if !curr_lock.contains_key(left_entry.0) {
+                                    deleted.push(left_entry.0.to_string());
+                                }
+
+                                // check for mis-matching checksum
+                                if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
+                                    changed.push(right_entry.path.to_string());
+                                }
+
+                            }
+                            None => {success = false}
+                        }
+
+                    }
+                    Err(_) => {success = false}
+
+                }
+
+            }
+
+        }
+        Err(_) => {success = false}
+    }
+
+    match right.file_hashes.lock() {
+        Ok(e) => {
+            for right_entry in e.iter() {
+                // check for file creations
+                if left.file_hashes.lock().unwrap().get(right_entry.0).is_none() {
+                    created.push(right_entry.0.to_string());
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    let mut return_type = SnapshotChangeType::None;
+    if !created.is_empty() { return_type = SnapshotChangeType::Created; }
+    if !deleted.is_empty() { return_type = SnapshotChangeType::Deleted; }
+    if !changed.is_empty() { return_type = SnapshotChangeType::Changed; }
+
+
+    Some((return_type, SnapshotCompareResult {
+        created,
+        deleted,
+        changed,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,12 +186,20 @@ mod tests {
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);
 
-        // let start2 = SystemTime::now();
-        // // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        // let test_snap = Snapshot::new(Path::new("/bin"), HashType::Full);
-        // let stop2 = SystemTime::now();
-        // let lapsed2 = stop2.duration_since(start2).unwrap();
-        // println!("{:?}", lapsed2);
+
+        let start2 = SystemTime::now();
+        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
+        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::MD5);
+        let stop2 = SystemTime::now();
+        let lapsed2 = stop2.duration_since(start2).unwrap();
+        println!("{:?}", lapsed2);
+
+        let result = compare(test_snap.clone(), test_snap2.clone());
+        let compare_result = result.unwrap().1;
+
+        println!("Created: {}", compare_result.created.len());
+        println!("Deleted: {}", compare_result.deleted.len());
+        println!("Changed: {}", compare_result.changed.len());
 
 
        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
