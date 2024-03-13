@@ -196,6 +196,7 @@ mod tests {
 
         let result = compare(test_snap.clone(), test_snap2.clone());
         let compare_result = result.unwrap().1;
+
         println!("Created: {}", compare_result.created.len());
         println!("Deleted: {}", compare_result.deleted.len());
         println!("Changed: {}", compare_result.changed.len());
