@@ -9,6 +9,10 @@ pub fn create_snapshot(path: &str, hash_type: HashType) -> Snapshot {
     Snapshot::new(Path::new("/etc"), hash_type)
 }
 
+// pub fn compare_snapshots() {
+//
+// }
+
 
 
 // #[cfg(test)]

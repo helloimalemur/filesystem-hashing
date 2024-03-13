@@ -40,20 +40,6 @@ impl Default for FileMetadata {
     }
 }
 
-enum SnapshotChangeType {
-    None,
-    Created,
-    Deleted,
-    Changed
-}
-
-#[derive(Debug)]
-pub struct SnapshotCompareResult {
-    created: Vec<String>,
-    deleted: Vec<String>,
-    changed: Vec<String>
-}
-
 impl Snapshot {
     pub fn new(path: &Path, hash_type: HashType) -> Snapshot {
         let root_path = match path.to_str() {
@@ -87,82 +73,96 @@ impl Snapshot {
 
         Snapshot { file_hashes, root_path, hash_type, uuid, date_created: Utc::now().timestamp() }
     }
-
-    pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
-        let mut success = true;
-        let mut created: Vec<String> = vec![];
-        let mut deleted: Vec<String> = vec![];
-        let mut changed: Vec<String> = vec![];
-
-
-
-        match left.file_hashes.lock() {
-            Ok(mut left_lock) => {
-
-                // for each entry in the hash list
-                for left_entry in left_lock.iter() {
-
-
-                    match right.file_hashes.lock() {
-                        Ok(curr_lock) => {
-                            // check for deletion
-                            if !curr_lock.contains_key(left_entry.0) {
-                                deleted.push(left_entry.0.to_string());
-                            }
-
-                            match curr_lock.get(left_entry.0) {
-                                Some(right_entry) => {
-
-                                    // check for mis-matching checksum
-                                    if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
-                                        changed.push(right_entry.path.to_string());
-                                    }
-
-                                }
-                                None => {success = false}
-                            }
-
-                        }
-                        Err(_) => {success = false}
-
-                    }
-
-                }
-
-            }
-            Err(_) => {success = false}
-        }
-
-        match right.file_hashes.lock() {
-            Ok(e) => {
-                for right_entry in e.iter() {
-                    // check for file creations
-                    if left.file_hashes.lock().unwrap().get(right_entry.0).is_none() {
-                        created.push(right_entry.0.to_string());
-                    }
-                }
-            }
-            Err(_) => {}
-        }
-
-        let mut return_type = SnapshotChangeType::None;
-        if !created.is_empty() { return_type = SnapshotChangeType::Created; }
-        if !deleted.is_empty() { return_type = SnapshotChangeType::Deleted; }
-        if !changed.is_empty() { return_type = SnapshotChangeType::Changed; }
-
-
-        Some((return_type, SnapshotCompareResult {
-            created,
-            deleted,
-            changed,
-        }))
-    }
 }
 
 impl Default for Snapshot {
     fn default() -> Self {
         Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), root_path: "".to_string(), hash_type: HashType::BLAKE3, uuid: "".to_string(), date_created: 0 }
     }
+}
+
+enum SnapshotChangeType {
+    None,
+    Created,
+    Deleted,
+    Changed
+}
+
+#[derive(Debug)]
+pub struct SnapshotCompareResult {
+    created: Vec<String>,
+    deleted: Vec<String>,
+    changed: Vec<String>
+}
+
+pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
+    let mut success = true;
+    let mut created: Vec<String> = vec![];
+    let mut deleted: Vec<String> = vec![];
+    let mut changed: Vec<String> = vec![];
+
+
+
+    match left.file_hashes.lock() {
+        Ok(mut left_lock) => {
+
+            // for each entry in the hash list
+            for left_entry in left_lock.iter() {
+
+
+                match right.file_hashes.lock() {
+                    Ok(curr_lock) => {
+                        // check for deletion
+                        if !curr_lock.contains_key(left_entry.0) {
+                            deleted.push(left_entry.0.to_string());
+                        }
+
+                        match curr_lock.get(left_entry.0) {
+                            Some(right_entry) => {
+
+                                // check for mis-matching checksum
+                                if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
+                                    changed.push(right_entry.path.to_string());
+                                }
+
+                            }
+                            None => {success = false}
+                        }
+
+                    }
+                    Err(_) => {success = false}
+
+                }
+
+            }
+
+        }
+        Err(_) => {success = false}
+    }
+
+    match right.file_hashes.lock() {
+        Ok(e) => {
+            for right_entry in e.iter() {
+                // check for file creations
+                if left.file_hashes.lock().unwrap().get(right_entry.0).is_none() {
+                    created.push(right_entry.0.to_string());
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    let mut return_type = SnapshotChangeType::None;
+    if !created.is_empty() { return_type = SnapshotChangeType::Created; }
+    if !deleted.is_empty() { return_type = SnapshotChangeType::Deleted; }
+    if !changed.is_empty() { return_type = SnapshotChangeType::Changed; }
+
+
+    Some((return_type, SnapshotCompareResult {
+        created,
+        deleted,
+        changed,
+    }))
 }
 
 #[cfg(test)]
