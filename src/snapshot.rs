@@ -90,9 +90,9 @@ pub enum SnapshotChangeType {
 
 #[derive(Debug)]
 pub struct SnapshotCompareResult {
-    created: Vec<String>,
-    deleted: Vec<String>,
-    changed: Vec<String>
+    pub created: Vec<String>,
+    pub deleted: Vec<String>,
+    pub changed: Vec<String>
 }
 
 pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
