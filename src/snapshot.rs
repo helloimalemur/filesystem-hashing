@@ -117,8 +117,9 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
                             Some(right_entry) => {
 
                                 // check for deletion
-                                if !curr_lock.contains_key(left_entry.0) {
-                                    deleted.push(left_entry.0.to_string());
+                                match curr_lock.get(left_entry.0) {
+                                    None => {deleted.push(left_entry.0.to_string());}
+                                    Some(_) => {}
                                 }
 
                                 // check for mis-matching checksum
@@ -191,7 +192,7 @@ mod tests {
         println!("{:?}", lapsed);
 
         let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
-
+        // let _ = fs::write(Path::new("/etc/test"), "asdf").unwrap();
 
         let start2 = SystemTime::now();
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
@@ -207,7 +208,7 @@ mod tests {
         println!("Deleted: {}", compare_result.deleted.len());
         println!("Changed: {}", compare_result.changed.len());
 
-
+        // let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
 
        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
        // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Fast);
