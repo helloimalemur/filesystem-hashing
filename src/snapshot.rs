@@ -101,19 +101,12 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
     let mut deleted: Vec<String> = vec![];
     let mut changed: Vec<String> = vec![];
 
-
-
     match left.file_hashes.lock() {
         Ok(mut left_lock) => {
-
             // for each entry in the hash list
             for left_entry in left_lock.iter() {
-
-
                 match right.file_hashes.lock() {
                     Ok(curr_lock) => {
-
-
                         match curr_lock.get(left_entry.0) {
                             // check for mis-matching checksum
                             Some(right_entry) => {
@@ -124,16 +117,12 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
                             // check for deletion
                             None => {deleted.push(left_entry.0.to_string());}
                         }
-
                     }
-                    Err(_) => {success = false}
-
+                    Err(_) => {}
                 }
-
             }
-
         }
-        Err(_) => {success = false}
+        Err(_) => {}
     }
 
     match right.file_hashes.lock() {
