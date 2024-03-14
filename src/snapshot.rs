@@ -168,13 +168,17 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::fs::File;
     use super::*;
     use std::path::Path;
+    use std::process::Command;
     use std::time::SystemTime;
 
     #[test]
     fn create_snapshot() {
         // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
+        let _ = File::create(Path::new("/etc/test")).unwrap();
 
         // let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
         // let test_snap = Snapshot::new(Path::new("/var/"), HashType::Fast); // danger
@@ -186,10 +190,12 @@ mod tests {
         let lapsed = stop.duration_since(start).unwrap();
         println!("{:?}", lapsed);
 
+        let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
+
 
         let start2 = SystemTime::now();
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::MD5);
+        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
         let stop2 = SystemTime::now();
         let lapsed2 = stop2.duration_since(start2).unwrap();
         println!("{:?}", lapsed2);
@@ -200,6 +206,7 @@ mod tests {
         println!("Created: {}", compare_result.created.len());
         println!("Deleted: {}", compare_result.deleted.len());
         println!("Changed: {}", compare_result.changed.len());
+
 
 
        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
