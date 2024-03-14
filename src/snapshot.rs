@@ -113,22 +113,16 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
                 match right.file_hashes.lock() {
                     Ok(curr_lock) => {
 
+
                         match curr_lock.get(left_entry.0) {
+                            // check for mis-matching checksum
                             Some(right_entry) => {
-
-                                // check for deletion
-                                match curr_lock.get(left_entry.0) {
-                                    None => {deleted.push(left_entry.0.to_string());}
-                                    Some(_) => {}
-                                }
-
-                                // check for mis-matching checksum
                                 if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
                                     changed.push(right_entry.path.to_string());
                                 }
-
                             }
-                            None => {success = false}
+                            // check for deletion
+                            None => {deleted.push(left_entry.0.to_string());}
                         }
 
                     }
