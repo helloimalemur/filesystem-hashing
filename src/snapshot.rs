@@ -142,7 +142,6 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
     if !deleted.is_empty() { return_type = SnapshotChangeType::Deleted; }
     if !changed.is_empty() { return_type = SnapshotChangeType::Changed; }
 
-
     Some((return_type, SnapshotCompareResult {
         created,
         deleted,
