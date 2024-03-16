@@ -7,6 +7,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 
 #[derive(Debug, Clone)]
@@ -17,7 +18,7 @@ pub struct Snapshot {
     pub uuid: String,
     pub date_created: i64
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FileMetadata {
     pub path: String,
     pub check_sum: Vec<u8>,
@@ -149,20 +150,35 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
     }))
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SerializableSnapshot {
+    pub file_hashes: Vec<FileMetadata>,
+    pub root_path: String,
+    pub hash_type: HashType,
+    pub uuid: String,
+    pub date_created: i64
+}
+
 pub fn export(snapshot: Snapshot, path: String) {
 
 }
 
 pub fn import(path: String) -> Snapshot {
 
-    let snapshot: Snapshot =
+    let snapshot= serde_json::from_slice::<SerializableSnapshot>(path.as_bytes()).unwrap();
+
+    let mut fh: HashMap<String, FileMetadata> = HashMap::new();
+
+    for entry in snapshot.file_hashes {
+        fh.insert(entry.path, entry.clone())
+    }
 
     Snapshot {
-        file_hashes: Arc::new(Mutex::new(Default::default())),
-        root_path: "".to_string(),
-        hash_type: HashType::MD5,
-        uuid: "".to_string(),
-        date_created: 0,
+        file_hashes: Arc::new(Mutex::new(fh)),
+        root_path: snapshot.root_path,
+        hash_type: snapshot.hash_type,
+        uuid: snapshot.uuid,
+        date_created: snapshot.date_created,
     }
 }
 
