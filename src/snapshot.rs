@@ -161,8 +161,27 @@ struct SerializableSnapshot {
     pub date_created: i64
 }
 
-pub fn export(snapshot: Snapshot, path: String) {
+
+fn path_resolve(path: String) -> String {
     let mut full_path = String::new();
+    if path.starts_with("./") {
+        let mut cur_dir: String = match env::current_dir() {
+            Ok(pb) => match pb.to_str() {
+                None => String::new(),
+                Some(str) => str.to_string()
+            }
+            Err(_) => String::new()
+        };
+        cur_dir.push('/');
+        full_path = path.replace("./", cur_dir.as_str());
+    } else {
+        full_path = path.to_string();
+    }
+    full_path
+}
+
+pub fn export(snapshot: Snapshot, path: String) {
+    let full_path = path_resolve(path);
 
     let mut fh: Vec<FileMetadata> = vec![];
 
@@ -183,25 +202,12 @@ pub fn export(snapshot: Snapshot, path: String) {
     let serialized = serde_json::to_string(&serializable).unwrap();
     // println!("{:#?}", serialized);
 
-    if !Path::new(&path).exists() {
-        if path.starts_with("./") {
-            let mut cur_dir: String = match env::current_dir() {
-                Ok(pb) => match pb.to_str() {
-                    None => String::new(),
-                    Some(str) => str.to_string()
-                }
-                Err(_) => String::new()
-            };
-            cur_dir.push('/');
-            full_path = path.replace("./", cur_dir.as_str());
-        } else {
-            full_path = path.to_string();
-        }
+    if !Path::new(&full_path).exists() {
 
         println!("{}", full_path);
 
-        let filename = path.split('/').last().unwrap();
-        let mut path_only = full_path.replace(filename, "");
+        let filename = full_path.split('/').last().unwrap();
+        let path_only = full_path.replace(filename, "");
 
         println!("{}", path_only);
         if let Ok(_) = fs::create_dir_all(path_only) {
@@ -213,8 +219,10 @@ pub fn export(snapshot: Snapshot, path: String) {
 }
 
 pub fn import(path: String) -> Snapshot {
-
+    let mut full_path = String::new();
     let snapshot= serde_json::from_slice::<SerializableSnapshot>(path.as_bytes()).unwrap();
+
+
 
     let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
