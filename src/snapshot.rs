@@ -253,7 +253,6 @@ mod tests {
     use std::fs::File;
     use super::*;
     use std::path::Path;
-    use std::process::Command;
     use std::time::SystemTime;
 
     #[test]
