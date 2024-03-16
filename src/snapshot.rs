@@ -3,10 +3,14 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{env, fs, os, thread};
+use std::fs::File;
+use std::io::{Read, Write};
 use std::thread::JoinHandle;
 use std::time::SystemTime;
+use bytes::BytesMut;
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 
 #[derive(Debug, Clone)]
@@ -17,7 +21,7 @@ pub struct Snapshot {
     pub uuid: String,
     pub date_created: i64
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FileMetadata {
     pub path: String,
     pub check_sum: Vec<u8>,
@@ -149,13 +153,106 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
     }))
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SerializableSnapshot {
+    pub file_hashes: Vec<FileMetadata>,
+    pub root_path: String,
+    pub hash_type: HashType,
+    pub uuid: String,
+    pub date_created: i64
+}
+
+
+fn path_resolve(path: String) -> String {
+    let mut full_path = String::new();
+    if path.starts_with("./") {
+        let mut cur_dir: String = match env::current_dir() {
+            Ok(pb) => match pb.to_str() {
+                None => String::new(),
+                Some(str) => str.to_string()
+            }
+            Err(_) => String::new()
+        };
+        cur_dir.push('/');
+        full_path = path.replace("./", cur_dir.as_str());
+    } else {
+        full_path = path.to_string();
+    }
+    full_path
+}
+
+pub fn export(snapshot: Snapshot, path: String) {
+    let full_path = path_resolve(path);
+
+    let mut fh: Vec<FileMetadata> = vec![];
+
+    if let Ok(unlocked) = snapshot.file_hashes.lock() {
+        for entry in unlocked.iter() {
+            fh.push(entry.1.clone())
+        }
+    }
+
+    let serializable = SerializableSnapshot {
+        file_hashes: fh,
+        root_path: snapshot.root_path,
+        hash_type: snapshot.hash_type,
+        uuid: snapshot.uuid,
+        date_created: snapshot.date_created,
+    };
+
+    let serialized = serde_json::to_string(&serializable).unwrap();
+    // println!("{:#?}", serialized);
+
+    if !Path::new(&full_path).exists() {
+
+        println!("{}", full_path);
+
+        let filename = full_path.split('/').last().unwrap();
+        let path_only = full_path.replace(filename, "");
+
+        println!("{}", path_only);
+        if let Ok(_) = fs::create_dir_all(path_only) {
+            if let Ok(mut file_handle) = File::create(full_path) {
+                file_handle.write_all(serialized.as_bytes()).unwrap()
+            }
+        }
+    }
+}
+
+pub fn import(path: String) -> Snapshot {
+    let mut buffer = BytesMut::new();
+    let full_path = path_resolve(path);
+    if let Ok(bytes) = fs::read(full_path) {
+        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&*bytes).unwrap();
+
+        let mut fh: HashMap<String, FileMetadata> = HashMap::new();
+
+        println!("{}", snapshot.file_hashes.len());
+
+        for entry in snapshot.file_hashes {
+            if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
+                println!("successfully imported: {}", entry.path);
+            }
+        }
+
+        Snapshot {
+            file_hashes: Arc::new(Mutex::new(fh)),
+            root_path: snapshot.root_path,
+            hash_type: snapshot.hash_type,
+            uuid: snapshot.uuid,
+            date_created: snapshot.date_created,
+        }
+    } else {
+        Snapshot::default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
     use std::fs::File;
     use super::*;
     use std::path::Path;
-    use std::process::Command;
     use std::time::SystemTime;
 
     #[test]
@@ -202,8 +299,29 @@ mod tests {
         // );
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
 
+
         // for fi in test_snap.file_hashes.iter() {
         //     println!("{}", fi.0)
         // }
     }
+
+    #[test]
+    fn export_snapshot() {
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        export(test_snap.clone(), "/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
+        export(test_snap.clone(), "./output/out.snapshot".to_string());
+
+
+    }
+
+    #[test]
+    fn import_snapshot() {
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let snap1 = import("/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
+        let snap2 = import("./output/out.snapshot".to_string());
+
+        println!("{:?}", snap2.file_hashes.lock().unwrap().len());
+
+    }
+
 }

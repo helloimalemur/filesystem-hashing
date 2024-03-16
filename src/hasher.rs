@@ -8,8 +8,9 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
     MD5,
     SHA3,
