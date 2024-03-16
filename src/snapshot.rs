@@ -203,7 +203,7 @@ pub fn export(snapshot: Snapshot, path: String) {
 
         println!("{}", path_only);
         let _ = fs::create_dir_all(path_only).unwrap();
-        // let _ = File::create()
+        let _ = File::create(full_path).unwrap();
     }
 }
 
