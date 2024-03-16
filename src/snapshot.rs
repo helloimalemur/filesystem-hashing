@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{env, fs, os, thread};
 use std::fs::File;
+use std::io::Write;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
 use chrono::Utc;
@@ -171,7 +172,7 @@ pub fn export(snapshot: Snapshot, path: String) {
         }
     }
 
-    let serialized = SerializableSnapshot {
+    let serializable = SerializableSnapshot {
         file_hashes: fh,
         root_path: snapshot.root_path,
         hash_type: snapshot.hash_type,
@@ -179,6 +180,7 @@ pub fn export(snapshot: Snapshot, path: String) {
         date_created: snapshot.date_created,
     };
 
+    let serialized = serde_json::to_string(&serializable).unwrap();
     // println!("{:#?}", serialized);
 
     if !Path::new(&path).exists() {
@@ -202,8 +204,11 @@ pub fn export(snapshot: Snapshot, path: String) {
         let mut path_only = full_path.replace(filename, "");
 
         println!("{}", path_only);
-        let _ = fs::create_dir_all(path_only).unwrap();
-        let _ = File::create(full_path).unwrap();
+        if let Ok(_) = fs::create_dir_all(path_only) {
+            if let Ok(mut file_handle) = File::create(full_path) {
+                file_handle.write_all(serialized.as_bytes()).unwrap()
+            }
+        }
     }
 }
 
