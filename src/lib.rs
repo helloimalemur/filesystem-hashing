@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use crate::hasher::HashType;

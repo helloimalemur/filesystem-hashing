@@ -5,9 +5,10 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::{env, fs, os, thread};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::thread::JoinHandle;
 use std::time::SystemTime;
+use bytes::BytesMut;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
@@ -219,15 +220,21 @@ pub fn export(snapshot: Snapshot, path: String) {
 }
 
 pub fn import(path: String) -> Snapshot {
-    let mut full_path = String::new();
-    let snapshot= serde_json::from_slice::<SerializableSnapshot>(path.as_bytes()).unwrap();
+    let mut buffer = BytesMut::new();
+    let full_path = path_resolve(path);
+    let bytes = fs::read(full_path).unwrap();
+    let snapshot= serde_json::from_slice::<SerializableSnapshot>(&*bytes).unwrap();
 
 
 
     let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
+    println!("{}", snapshot.file_hashes.len());
+
     for entry in snapshot.file_hashes {
-        fh.insert(entry.path.clone(), entry.clone()).unwrap();
+        if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
+            println!("successfully imported: {}", entry.path);
+        }
     }
 
     Snapshot {
@@ -306,4 +313,16 @@ mod tests {
 
 
     }
+
+    #[test]
+    fn import_snapshot() {
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let snap1 = import("/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
+        let snap2 = import("./output/out.snapshot".to_string());
+
+        println!("{:?}", snap2.file_hashes.lock().unwrap().len());
+
+
+    }
+
 }
