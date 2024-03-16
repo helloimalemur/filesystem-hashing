@@ -3,7 +3,7 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::{fs, thread};
+use std::{env, fs, os, thread};
 use std::fs::File;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
@@ -161,6 +161,8 @@ struct SerializableSnapshot {
 }
 
 pub fn export(snapshot: Snapshot, path: String) {
+    let mut full_path = String::new();
+
     let mut fh: Vec<FileMetadata> = vec![];
 
     if let Ok(unlocked) = snapshot.file_hashes.lock() {
@@ -177,10 +179,32 @@ pub fn export(snapshot: Snapshot, path: String) {
         date_created: snapshot.date_created,
     };
 
-    // if !Path::new(&path).exists() {
-    //     let _ = fs::create_dir_all(path).unwrap();
-    //     let _ = File::create()
-    // }
+    // println!("{:#?}", serialized);
+
+    if !Path::new(&path).exists() {
+        if path.starts_with("./") {
+            let mut cur_dir: String = match env::current_dir() {
+                Ok(pb) => match pb.to_str() {
+                    None => String::new(),
+                    Some(str) => str.to_string()
+                }
+                Err(_) => String::new()
+            };
+            cur_dir.push('/');
+            full_path = path.replace("./", cur_dir.as_str());
+        } else {
+            full_path = path.to_string();
+        }
+
+        println!("{}", full_path);
+
+        let filename = path.split('/').last().unwrap();
+        let mut path_only = full_path.replace(filename, "");
+
+        println!("{}", path_only);
+        let _ = fs::create_dir_all(path_only).unwrap();
+        // let _ = File::create()
+    }
 }
 
 pub fn import(path: String) -> Snapshot {
@@ -255,8 +279,18 @@ mod tests {
         // );
         println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
 
+
         // for fi in test_snap.file_hashes.iter() {
         //     println!("{}", fi.0)
         // }
+    }
+
+    #[test]
+    fn export_snapshot() {
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        // export(test_snap, "/home/foxx/RustroverProjects/Fasching/output/out.snapshot".to_string())
+        export(test_snap, "./output/out.snapshot".to_string())
+
+
     }
 }
