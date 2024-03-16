@@ -1,6 +1,7 @@
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use crate::hasher::HashType;
-use crate::snapshot::{Snapshot, SnapshotCompareResult, SnapshotChangeType, compare};
+use crate::snapshot::{Snapshot, SnapshotCompareResult, SnapshotChangeType, compare, export, import};
 
 pub mod hasher;
 pub mod snapshot;
@@ -13,7 +14,13 @@ pub fn compare_snapshots(left: Snapshot, right: Snapshot) -> Option<(SnapshotCha
     compare(left, right)
 }
 
+pub fn export_snapshot(snapshot: Snapshot, path: String) {
+    export(snapshot, path)
+}
 
+pub fn import_snapshot(path: String) -> Snapshot {
+    import(path)
+}
 
 // #[cfg(test)]
 // mod tests {

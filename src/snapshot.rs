@@ -149,6 +149,20 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
     }))
 }
 
+pub fn export(snapshot: Snapshot, path: String) {
+
+}
+
+pub fn import(path: String) -> Snapshot {
+    Snapshot {
+        file_hashes: Arc::new(Mutex::new(Default::default())),
+        root_path: "".to_string(),
+        hash_type: HashType::MD5,
+        uuid: "".to_string(),
+        date_created: 0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
