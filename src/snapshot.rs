@@ -154,6 +154,9 @@ pub fn export(snapshot: Snapshot, path: String) {
 }
 
 pub fn import(path: String) -> Snapshot {
+
+    let snapshot: Snapshot =
+
     Snapshot {
         file_hashes: Arc::new(Mutex::new(Default::default())),
         root_path: "".to_string(),
