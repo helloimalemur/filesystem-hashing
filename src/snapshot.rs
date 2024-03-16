@@ -3,7 +3,8 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{fs, thread};
+use std::fs::File;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
 use chrono::Utc;
@@ -160,7 +161,26 @@ struct SerializableSnapshot {
 }
 
 pub fn export(snapshot: Snapshot, path: String) {
+    let mut fh: Vec<FileMetadata> = vec![];
 
+    if let Ok(unlocked) = snapshot.file_hashes.lock() {
+        for entry in unlocked.iter() {
+            fh.push(entry.1.clone())
+        }
+    }
+
+    let serialized = SerializableSnapshot {
+        file_hashes: fh,
+        root_path: snapshot.root_path,
+        hash_type: snapshot.hash_type,
+        uuid: snapshot.uuid,
+        date_created: snapshot.date_created,
+    };
+
+    // if !Path::new(&path).exists() {
+    //     let _ = fs::create_dir_all(path).unwrap();
+    //     let _ = File::create()
+    // }
 }
 
 pub fn import(path: String) -> Snapshot {
@@ -170,7 +190,7 @@ pub fn import(path: String) -> Snapshot {
     let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
     for entry in snapshot.file_hashes {
-        fh.insert(entry.path, entry.clone())
+        fh.insert(entry.path.clone(), entry.clone()).unwrap();
     }
 
     Snapshot {
