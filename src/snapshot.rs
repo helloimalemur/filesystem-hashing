@@ -322,7 +322,6 @@ mod tests {
 
         println!("{:?}", snap2.file_hashes.lock().unwrap().len());
 
-
     }
 
 }
