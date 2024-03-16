@@ -288,8 +288,8 @@ mod tests {
     #[test]
     fn export_snapshot() {
         let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
-        // export(test_snap, "/home/foxx/RustroverProjects/Fasching/output/out.snapshot".to_string())
-        export(test_snap, "./output/out.snapshot".to_string())
+        export(test_snap.clone(), "/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
+        export(test_snap.clone(), "./output/out.snapshot".to_string());
 
 
     }
