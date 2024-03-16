@@ -222,27 +222,28 @@ pub fn export(snapshot: Snapshot, path: String) {
 pub fn import(path: String) -> Snapshot {
     let mut buffer = BytesMut::new();
     let full_path = path_resolve(path);
-    let bytes = fs::read(full_path).unwrap();
-    let snapshot= serde_json::from_slice::<SerializableSnapshot>(&*bytes).unwrap();
+    if let Ok(bytes) = fs::read(full_path) {
+        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&*bytes).unwrap();
 
+        let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
+        println!("{}", snapshot.file_hashes.len());
 
-    let mut fh: HashMap<String, FileMetadata> = HashMap::new();
-
-    println!("{}", snapshot.file_hashes.len());
-
-    for entry in snapshot.file_hashes {
-        if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
-            println!("successfully imported: {}", entry.path);
+        for entry in snapshot.file_hashes {
+            if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
+                println!("successfully imported: {}", entry.path);
+            }
         }
-    }
 
-    Snapshot {
-        file_hashes: Arc::new(Mutex::new(fh)),
-        root_path: snapshot.root_path,
-        hash_type: snapshot.hash_type,
-        uuid: snapshot.uuid,
-        date_created: snapshot.date_created,
+        Snapshot {
+            file_hashes: Arc::new(Mutex::new(fh)),
+            root_path: snapshot.root_path,
+            hash_type: snapshot.hash_type,
+            uuid: snapshot.uuid,
+            date_created: snapshot.date_created,
+        }
+    } else {
+        Snapshot::default()
     }
 }
 
