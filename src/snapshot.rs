@@ -205,12 +205,12 @@ pub fn export(snapshot: Snapshot, path: String) {
 
     if !Path::new(&full_path).exists() {
 
-        println!("{}", full_path);
+        // println!("{}", full_path);
 
         let filename = full_path.split('/').last().unwrap();
         let path_only = full_path.replace(filename, "");
 
-        println!("{}", path_only);
+        // println!("{}", path_only);
         if let Ok(_) = fs::create_dir_all(path_only) {
             if let Ok(mut file_handle) = File::create(full_path) {
                 file_handle.write_all(serialized.as_bytes()).unwrap()
@@ -227,11 +227,11 @@ pub fn import(path: String) -> Snapshot {
 
         let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
-        println!("{}", snapshot.file_hashes.len());
+        // println!("{}", snapshot.file_hashes.len());
 
         for entry in snapshot.file_hashes {
             if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
-                println!("successfully imported: {}", entry.path);
+                // println!("successfully imported: {}", entry.path);
             }
         }
 
@@ -268,7 +268,7 @@ mod tests {
         let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
         let stop = SystemTime::now();
         let lapsed = stop.duration_since(start).unwrap();
-        println!("{:?}", lapsed);
+        // println!("{:?}", lapsed);
 
         let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
         // let _ = fs::write(Path::new("/etc/test"), "asdf").unwrap();
@@ -278,14 +278,14 @@ mod tests {
         let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
         let stop2 = SystemTime::now();
         let lapsed2 = stop2.duration_since(start2).unwrap();
-        println!("{:?}", lapsed2);
+        // println!("{:?}", lapsed2);
 
         let result = compare(test_snap.clone(), test_snap2.clone());
         let compare_result = result.unwrap().1;
 
-        println!("Created: {}", compare_result.created.len());
-        println!("Deleted: {}", compare_result.deleted.len());
-        println!("Changed: {}", compare_result.changed.len());
+        // println!("Created: {}", compare_result.created.len());
+        // println!("Deleted: {}", compare_result.deleted.len());
+        // println!("Changed: {}", compare_result.changed.len());
 
         // let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
 
