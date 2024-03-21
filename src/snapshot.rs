@@ -45,7 +45,7 @@ impl Default for FileMetadata {
 }
 
 impl Snapshot {
-    pub fn new(path: &Path, hash_type: HashType) -> Snapshot {
+    pub fn new(path: &Path, hash_type: HashType, black_list: Vec<String>) -> Snapshot {
         let root_path = match path.to_str() {
             None => {"".to_string()}
             Some(p) => {p.to_string()}
@@ -59,7 +59,8 @@ impl Snapshot {
         let mut hashers: Vec<JoinHandle<()>> = vec![];
 
         for p in file_paths.into_iter().flatten() {
-            if p.path().is_file() {
+            let file_path = p.path().to_str().unwrap().to_string();
+            if p.path().is_file() && !black_list.contains(&file_path) {
                 let bind = file_hashes.clone();
 
                 let handle = thread::spawn(move || {
@@ -265,7 +266,7 @@ mod tests {
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
         // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Full); // safe
         let start = SystemTime::now();
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
         let stop = SystemTime::now();
         let lapsed = stop.duration_since(start).unwrap();
         // println!("{:?}", lapsed);
@@ -275,7 +276,7 @@ mod tests {
 
         let start2 = SystemTime::now();
         // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
         let stop2 = SystemTime::now();
         let lapsed2 = stop2.duration_since(start2).unwrap();
         // println!("{:?}", lapsed2);
@@ -307,7 +308,7 @@ mod tests {
 
     #[test]
     fn export_snapshot() {
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
         export(test_snap.clone(), "/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
         export(test_snap.clone(), "./output/out.snapshot".to_string());
 
@@ -316,7 +317,7 @@ mod tests {
 
     #[test]
     fn import_snapshot() {
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3);
+        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
         let snap1 = import("/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
         let snap2 = import("./output/out.snapshot".to_string());
 

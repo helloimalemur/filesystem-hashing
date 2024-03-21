@@ -8,8 +8,8 @@ use crate::snapshot::{Snapshot, SnapshotCompareResult, SnapshotChangeType, compa
 pub mod hasher;
 pub mod snapshot;
 
-pub fn create_snapshot(path: &str, hash_type: HashType) -> Snapshot {
-    Snapshot::new(Path::new(path), hash_type)
+pub fn create_snapshot(path: &str, hash_type: HashType, black_list: Vec<String>) -> Snapshot {
+    Snapshot::new(Path::new(path), hash_type, black_list)
 }
 
 pub fn compare_snapshots(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
