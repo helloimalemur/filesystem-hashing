@@ -56,9 +56,9 @@ pub fn hash_files(
         }
     }
 
-    let blacklist: Vec<&str> = vec!["/proc", "/tmp"];
+    let black_list: Vec<&str> = vec!["/proc", "/tmp"];
 
-    for entry in blacklist {
+    for entry in black_list {
         if full_path.starts_with(entry) {
             return Err(Error);
         }

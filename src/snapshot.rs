@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct Snapshot {
     pub file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>>,
+    pub black_list: Vec<String>,
     pub root_path: String,
     pub hash_type: HashType,
     pub uuid: String,
@@ -76,13 +77,14 @@ impl Snapshot {
             handle.join().expect("could not join handle")
         }
 
-        Snapshot { file_hashes, root_path, hash_type, uuid, date_created: Utc::now().timestamp() }
+        Snapshot { file_hashes, black_list, root_path, hash_type, uuid, date_created: Utc::now().timestamp() }
     }
 }
 
 impl Default for Snapshot {
     fn default() -> Self {
-        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), root_path: "".to_string(), hash_type: HashType::BLAKE3, uuid: "".to_string(), date_created: 0 }
+        let black_list: Vec<String> = vec![];
+        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), black_list, root_path: "".to_string(), hash_type: HashType::BLAKE3, uuid: "".to_string(), date_created: 0 }
     }
 }
 
@@ -235,9 +237,10 @@ pub fn import(path: String) -> Snapshot {
                 // println!("successfully imported: {}", entry.path);
             }
         }
-
+        let black_list: Vec<String> = vec![];
         Snapshot {
             file_hashes: Arc::new(Mutex::new(fh)),
+            black_list,
             root_path: snapshot.root_path,
             hash_type: snapshot.hash_type,
             uuid: snapshot.uuid,
