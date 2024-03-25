@@ -206,18 +206,19 @@ pub fn export(snapshot: Snapshot, path: String) {
     let serialized = serde_json::to_string(&serializable).unwrap();
     // println!("{:#?}", serialized);
 
-    if !Path::new(&full_path).exists() {
+    if Path::new(&full_path).exists() {
+        let _ = fs::remove_file(&full_path).unwrap();
+    }
 
-        // println!("{}", full_path);
+    // println!("{}", full_path);
 
-        let filename = full_path.split('/').last().unwrap();
-        let path_only = full_path.replace(filename, "");
+    let filename = full_path.split('/').last().unwrap();
+    let path_only = full_path.replace(filename, "");
 
-        // println!("{}", path_only);
-        if let Ok(_) = fs::create_dir_all(path_only) {
-            if let Ok(mut file_handle) = File::create(full_path) {
-                file_handle.write_all(serialized.as_bytes()).unwrap()
-            }
+    // println!("{}", path_only);
+    if let Ok(_) = fs::create_dir_all(path_only) {
+        if let Ok(mut file_handle) = File::create(full_path) {
+            file_handle.write_all(serialized.as_bytes()).unwrap()
         }
     }
 }
