@@ -16,8 +16,8 @@ pub fn compare_snapshots(left: Snapshot, right: Snapshot) -> Option<(SnapshotCha
     compare(left, right)
 }
 
-pub fn export_snapshot(snapshot: Snapshot, path: String) {
-    export(snapshot, path)
+pub fn export_snapshot(snapshot: Snapshot, path: String, overwrite: bool) {
+    export(snapshot, path, overwrite)
 }
 
 pub fn import_snapshot(path: String) -> Snapshot {
