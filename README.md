@@ -1,7 +1,5 @@
 #### Fasching
 
-## work in progress, submit and issue with requests~!
-
 ## Track Filesystem Integrity via "Snapshots" containing hash of all files within specified directories.
     Create Snapshots    
     Compare Snapshots
