@@ -1,20 +1,19 @@
-use crate::snapshot::{FileMetadata};
+use crate::snapshot::FileMetadata;
 use bytes::{BufMut, BytesMut};
+use serde::{Deserialize, Serialize};
 use sha3::digest::block_buffer::Error;
 use sha3::{Digest, Sha3_256};
 use std::collections::HashMap;
-use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
     MD5,
     SHA3,
-    BLAKE3
+    BLAKE3,
 }
 
 pub struct HashResult {
@@ -84,7 +83,7 @@ pub fn hash_files(
         let byte_hash = match hash_type {
             HashType::MD5 => hash_md5(Vec::from(bytes)),
             HashType::SHA3 => hash_sha3(Vec::from(bytes)),
-            HashType::BLAKE3 => hash_blake3(Vec::from(bytes))
+            HashType::BLAKE3 => hash_blake3(Vec::from(bytes)),
         };
 
         file_hash.put_slice(&byte_hash);
@@ -131,7 +130,6 @@ fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
     blake3::hash(bytes.as_slice()).as_bytes().to_vec()
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::hasher::{hash_blake3, hash_md5, hash_sha3};
@@ -141,25 +139,43 @@ mod tests {
         let test_string = "aprettylongteststring".as_bytes();
         let hashed = hash_blake3(test_string.to_vec());
         // println!("{:#04X?}", hashed);
-        assert_eq!(hashed, [0xFD,0x5F,0x22,0xE8,0x95,0x82,0x18,0xD6,0x9A,0x96,0xAC,0x77,0xCD,0xCD,0xAA,0xA7,0x51,0xCE,0x81,0xF3,0x04,0x86,0xC8,0x49,0xA6,0xD7,0x66,0x81,0x68,0xDB,0x22,0x2D,])
+        assert_eq!(
+            hashed,
+            [
+                0xFD, 0x5F, 0x22, 0xE8, 0x95, 0x82, 0x18, 0xD6, 0x9A, 0x96, 0xAC, 0x77, 0xCD, 0xCD,
+                0xAA, 0xA7, 0x51, 0xCE, 0x81, 0xF3, 0x04, 0x86, 0xC8, 0x49, 0xA6, 0xD7, 0x66, 0x81,
+                0x68, 0xDB, 0x22, 0x2D,
+            ]
+        )
     }
-
 
     #[test]
     fn md5() {
         let test_string = "adifferentbutstillprettylongteststring".as_bytes();
         let hashed = hash_md5(test_string.to_vec());
         // println!("{:#04X?}", hashed);
-        assert_eq!(hashed,[0x6C,0x39,0x5D,0xC4,0xC5,0x81,0xAE,0x7A,0x55,0x74,0xC4,0x5B,0xE3,0xFB,0x92,0x58])
-
+        assert_eq!(
+            hashed,
+            [
+                0x6C, 0x39, 0x5D, 0xC4, 0xC5, 0x81, 0xAE, 0x7A, 0x55, 0x74, 0xC4, 0x5B, 0xE3, 0xFB,
+                0x92, 0x58
+            ]
+        )
     }
 
     #[test]
     fn sha3() {
-        let test_string = "adifferentbutstillprettylongteststringwithaslightlydifferentcontent".as_bytes();
+        let test_string =
+            "adifferentbutstillprettylongteststringwithaslightlydifferentcontent".as_bytes();
         let hashed = hash_sha3(test_string.to_vec());
         println!("{:#04X?}", hashed);
-        assert_eq!(hashed,[0xA1,0x55,0xE2,0x73,0x63,0x51,0x36,0xC5,0x25,0xFB,0x36,0xA8,0x81,0xD6,0x02,0x21,0xCC,0xC5,0x48,0x9B,0xE7,0x18,0xCC,0x57,0xCE,0x66,0xBA,0x78,0xBA,0x26,0x33,0x7E,])
+        assert_eq!(
+            hashed,
+            [
+                0xA1, 0x55, 0xE2, 0x73, 0x63, 0x51, 0x36, 0xC5, 0x25, 0xFB, 0x36, 0xA8, 0x81, 0xD6,
+                0x02, 0x21, 0xCC, 0xC5, 0x48, 0x9B, 0xE7, 0x18, 0xCC, 0x57, 0xCE, 0x66, 0xBA, 0x78,
+                0xBA, 0x26, 0x33, 0x7E,
+            ]
+        )
     }
-
 }

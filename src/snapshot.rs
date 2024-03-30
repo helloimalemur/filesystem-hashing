@@ -1,17 +1,16 @@
 use crate::hasher::{hash_files, HashType};
-use rand::{thread_rng, Rng};
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::{env, fs, os, thread};
-use std::fs::File;
-use std::io::{Read, Write};
-use std::thread::JoinHandle;
-use std::time::SystemTime;
 use anyhow::{anyhow, Error};
 use bytes::BytesMut;
 use chrono::Utc;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::thread::JoinHandle;
+use std::{env, fs, thread};
 
 #[derive(Debug, Clone)]
 pub struct Snapshot {
@@ -20,7 +19,7 @@ pub struct Snapshot {
     pub root_path: String,
     pub hash_type: HashType,
     pub uuid: String,
-    pub date_created: i64
+    pub date_created: i64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FileMetadata {
@@ -46,10 +45,14 @@ impl Default for FileMetadata {
 }
 
 impl Snapshot {
-    pub fn new(path: &Path, hash_type: HashType, black_list: Vec<String>) -> Result<Snapshot, Error> {
+    pub fn new(
+        path: &Path,
+        hash_type: HashType,
+        black_list: Vec<String>,
+    ) -> Result<Snapshot, Error> {
         let root_path = match path.to_str() {
-            None => {"".to_string()}
-            Some(p) => {p.to_string()}
+            None => "".to_string(),
+            Some(p) => p.to_string(),
         };
         let mut rand = thread_rng();
         let uuid_int: i128 = rand.gen();
@@ -77,14 +80,28 @@ impl Snapshot {
             handle.join().expect("could not join handle")
         }
 
-        Ok(Snapshot { file_hashes, black_list, root_path, hash_type, uuid, date_created: Utc::now().timestamp() })
+        Ok(Snapshot {
+            file_hashes,
+            black_list,
+            root_path,
+            hash_type,
+            uuid,
+            date_created: Utc::now().timestamp(),
+        })
     }
 }
 
 impl Default for Snapshot {
     fn default() -> Self {
         let black_list: Vec<String> = vec![];
-        Snapshot { file_hashes: Arc::new(Mutex::new(HashMap::new())), black_list, root_path: "".to_string(), hash_type: HashType::BLAKE3, uuid: "".to_string(), date_created: 0 }
+        Snapshot {
+            file_hashes: Arc::new(Mutex::new(HashMap::new())),
+            black_list,
+            root_path: "".to_string(),
+            hash_type: HashType::BLAKE3,
+            uuid: "".to_string(),
+            date_created: 0,
+        }
     }
 }
 
@@ -92,68 +109,74 @@ pub enum SnapshotChangeType {
     None,
     Created,
     Deleted,
-    Changed
+    Changed,
 }
 
 #[derive(Debug)]
 pub struct SnapshotCompareResult {
     pub created: Vec<String>,
     pub deleted: Vec<String>,
-    pub changed: Vec<String>
+    pub changed: Vec<String>,
 }
 
-pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
-    let mut success = true;
+pub fn compare(
+    left: Snapshot,
+    right: Snapshot,
+) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
+    #[allow(unused)]
+    let success = true;
     let mut created: Vec<String> = vec![];
     let mut deleted: Vec<String> = vec![];
     let mut changed: Vec<String> = vec![];
 
-    match left.file_hashes.lock() {
-        Ok(mut left_lock) => {
-            // for each entry in the hash list
-            for left_entry in left_lock.iter() {
-                match right.file_hashes.lock() {
-                    Ok(curr_lock) => {
-                        match curr_lock.get(left_entry.0) {
-                            // check for mis-matching checksum
-                            Some(right_entry) => {
-                                if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
-                                    changed.push(right_entry.path.to_string());
-                                }
-                            }
-                            // check for deletion
-                            None => {deleted.push(left_entry.0.to_string());}
+    if let Ok(left_lock) = left.file_hashes.lock() {
+        // for each entry in the hash list
+        for left_entry in left_lock.iter() {
+            if let Ok(curr_lock) = right.file_hashes.lock() {
+                match curr_lock.get(left_entry.0) {
+                    // check for mis-matching checksum
+                    Some(right_entry) => {
+                        if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
+                            changed.push(right_entry.path.to_string());
                         }
                     }
-                    Err(_) => {}
+                    // check for deletion
+                    None => {
+                        deleted.push(left_entry.0.to_string());
+                    }
                 }
             }
         }
-        Err(_) => {}
     }
 
-    match right.file_hashes.lock() {
-        Ok(e) => {
-            for right_entry in e.iter() {
-                // check for file creations
-                if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
-                    created.push(right_entry.0.to_string());
-                }
+    if let Ok(e) = right.file_hashes.lock() {
+        for right_entry in e.iter() {
+            // check for file creations
+            if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
+                created.push(right_entry.0.to_string());
             }
         }
-        Err(_) => {}
     }
 
     let mut return_type = SnapshotChangeType::None;
-    if !created.is_empty() { return_type = SnapshotChangeType::Created; }
-    if !deleted.is_empty() { return_type = SnapshotChangeType::Deleted; }
-    if !changed.is_empty() { return_type = SnapshotChangeType::Changed; }
+    if !created.is_empty() {
+        return_type = SnapshotChangeType::Created;
+    }
+    if !deleted.is_empty() {
+        return_type = SnapshotChangeType::Deleted;
+    }
+    if !changed.is_empty() {
+        return_type = SnapshotChangeType::Changed;
+    }
 
-    Some((return_type, SnapshotCompareResult {
-        created,
-        deleted,
-        changed,
-    }))
+    Some((
+        return_type,
+        SnapshotCompareResult {
+            created,
+            deleted,
+            changed,
+        },
+    ))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,19 +185,19 @@ struct SerializableSnapshot {
     pub root_path: String,
     pub hash_type: HashType,
     pub uuid: String,
-    pub date_created: i64
+    pub date_created: i64,
 }
 
-
 fn path_resolve(path: String) -> String {
+    #[allow(unused)]
     let mut full_path = String::new();
     if path.starts_with("./") {
         let mut cur_dir: String = match env::current_dir() {
             Ok(pb) => match pb.to_str() {
                 None => String::new(),
-                Some(str) => str.to_string()
-            }
-            Err(_) => String::new()
+                Some(str) => str.to_string(),
+            },
+            Err(_) => String::new(),
         };
         cur_dir.push('/');
         full_path = path.replace("./", cur_dir.as_str());
@@ -205,36 +228,41 @@ pub fn export(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), E
 
     let serialized = serde_json::to_string(&serializable)?;
     // println!("{:#?}", serialized);
-    let filename = full_path.split('/').last().expect("unable to get full path");
+    let filename = full_path
+        .split('/')
+        .last()
+        .expect("unable to get full path");
     let path_only = full_path.replace(filename, "");
     // println!("{}", full_path);
     // println!("{}", path_only);
 
-    Ok(if Path::new(&full_path).exists() && overwrite {
-        let _ = fs::remove_file(&full_path)?;
+    if Path::new(&full_path).exists() && overwrite {
+        fs::remove_file(&full_path)?;
         write_to_file(path_only, full_path, serialized)?
     } else if !Path::new(&full_path).exists() {
         write_to_file(path_only, full_path, serialized)?
-    })
+    };
+    Ok(())
 }
 
 fn write_to_file(path_only: String, full_path: String, serialized: String) -> Result<(), Error> {
-    if let Ok(_) = fs::create_dir_all(&path_only) {
+    if fs::create_dir_all(&path_only).is_ok() {
         if let Ok(mut file_handle) = File::create(full_path) {
             Ok(file_handle.write_all(serialized.as_bytes())?)
         } else {
-            return Err(anyhow!("Unable to write to path: {}", path_only.clone()));
+            Err(anyhow!("Unable to write to path: {}", path_only.clone()))
         }
     } else {
-        return Err(anyhow!("Unable to write to path: {}", path_only.clone()));
+        Err(anyhow!("Unable to write to path: {}", path_only.clone()))
     }
 }
 
 pub fn import(path: String) -> Result<Snapshot, Error> {
-    let mut buffer = BytesMut::new();
+    #[allow(unused)]
+    let buffer = BytesMut::new();
     let full_path = path_resolve(path);
     if let Ok(bytes) = fs::read(full_path) {
-        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&bytes)?;
+        let snapshot = serde_json::from_slice::<SerializableSnapshot>(&bytes)?;
 
         let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
@@ -261,12 +289,11 @@ pub fn import(path: String) -> Result<Snapshot, Error> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::compare_snapshots;
     use std::fs;
     use std::fs::File;
-    use super::*;
     use std::path::Path;
-    use std::time::SystemTime;
-    use crate::compare_snapshots;
 
     #[test]
     fn create_snapshot_blake3() {
@@ -288,7 +315,11 @@ mod tests {
     fn export_snapshot() {
         assert!(!Path::new("./build/out.snapshot").exists());
         let test_snap_export = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        let _ = export(test_snap_export.unwrap().clone(), "./build/out.snapshot".to_string(), true);
+        let _ = export(
+            test_snap_export.unwrap().clone(),
+            "./build/out.snapshot".to_string(),
+            true,
+        );
         assert!(Path::new("./build/out.snapshot").exists());
         fs::remove_file(Path::new("./build/out.snapshot")).unwrap();
     }
@@ -296,7 +327,11 @@ mod tests {
     #[test]
     fn import_snapshot() {
         let test_snap_import = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        let _ = export(test_snap_import.unwrap(), "./build/in.snapshot".to_string(), true);
+        let _ = export(
+            test_snap_import.unwrap(),
+            "./build/in.snapshot".to_string(),
+            true,
+        );
         let snapshot = import("./build/in.snapshot".to_string());
         assert!(snapshot.unwrap().file_hashes.lock().unwrap().len() > 0);
         fs::remove_file(Path::new("./build/in.snapshot")).unwrap();
@@ -306,12 +341,27 @@ mod tests {
     fn creation_detection() {
         assert!(!Path::new("./build/test_creation/").exists());
         fs::create_dir_all(Path::new("./build/test_creation/")).unwrap();
-        let test_snap_creation_1 = Snapshot::new(Path::new("./build/test_creation/"), HashType::BLAKE3, vec![]);
+        let test_snap_creation_1 = Snapshot::new(
+            Path::new("./build/test_creation/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         File::create(Path::new("./build/test_creation/test1")).unwrap();
         File::create(Path::new("./build/test_creation/test2")).unwrap();
         File::create(Path::new("./build/test_creation/test3")).unwrap();
-        let test_snap_creation_2 = Snapshot::new(Path::new("./build/test_creation/"), HashType::BLAKE3, vec![]);
-        assert_eq!(compare_snapshots(test_snap_creation_1.unwrap(), test_snap_creation_2.unwrap()).unwrap().1.created.len(), 3);
+        let test_snap_creation_2 = Snapshot::new(
+            Path::new("./build/test_creation/"),
+            HashType::BLAKE3,
+            vec![],
+        );
+        assert_eq!(
+            compare_snapshots(test_snap_creation_1.unwrap(), test_snap_creation_2.unwrap())
+                .unwrap()
+                .1
+                .created
+                .len(),
+            3
+        );
         fs::remove_dir_all(Path::new("./build/test_creation/")).unwrap();
     }
 
@@ -319,12 +369,27 @@ mod tests {
     fn deletion_detection() {
         assert!(!Path::new("./build/test_deletion/").exists());
         fs::create_dir_all(Path::new("./build/test_deletion/")).unwrap();
-        let test_snap_deletion_1 = Snapshot::new(Path::new("./build/test_deletion/"), HashType::BLAKE3, vec![]);
+        let test_snap_deletion_1 = Snapshot::new(
+            Path::new("./build/test_deletion/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         File::create(Path::new("./build/test_deletion/test1")).unwrap();
         File::create(Path::new("./build/test_deletion/test2")).unwrap();
         File::create(Path::new("./build/test_deletion/test3")).unwrap();
-        let test_snap_deletion_2 = Snapshot::new(Path::new("./build/test_deletion/"), HashType::BLAKE3, vec![]);
-        assert_eq!(compare_snapshots(test_snap_deletion_2.unwrap(), test_snap_deletion_1.unwrap()).unwrap().1.deleted.len(), 3);
+        let test_snap_deletion_2 = Snapshot::new(
+            Path::new("./build/test_deletion/"),
+            HashType::BLAKE3,
+            vec![],
+        );
+        assert_eq!(
+            compare_snapshots(test_snap_deletion_2.unwrap(), test_snap_deletion_1.unwrap())
+                .unwrap()
+                .1
+                .deleted
+                .len(),
+            3
+        );
         fs::remove_dir_all(Path::new("./build/test_deletion/")).unwrap();
     }
 
@@ -335,13 +400,21 @@ mod tests {
         let mut file1 = File::create(Path::new("./build/test_change/test1")).unwrap();
         let mut file2 = File::create(Path::new("./build/test_change/test2")).unwrap();
         let mut file3 = File::create(Path::new("./build/test_change/test3")).unwrap();
-        let test_snap_change_1 = Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
+        let test_snap_change_1 =
+            Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
         file1.write_all("file1".as_bytes()).unwrap();
         file2.write_all("file2".as_bytes()).unwrap();
         file3.write_all("file3".as_bytes()).unwrap();
-        let test_snap_change_2 = Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
-        assert_eq!(compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap()).unwrap().1.changed.len(), 3);
+        let test_snap_change_2 =
+            Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
+        assert_eq!(
+            compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
+                .unwrap()
+                .1
+                .changed
+                .len(),
+            3
+        );
         fs::remove_dir_all(Path::new("./build/test_change/")).unwrap();
     }
-
 }
