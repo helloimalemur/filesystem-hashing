@@ -230,7 +230,7 @@ pub fn import(path: String) -> Snapshot {
     let mut buffer = BytesMut::new();
     let full_path = path_resolve(path);
     if let Ok(bytes) = fs::read(full_path) {
-        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&*bytes).unwrap();
+        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&bytes).unwrap();
 
         let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
