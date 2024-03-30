@@ -265,8 +265,18 @@ mod tests {
 
     #[test]
     fn create_snapshot_blake3() {
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        assert!(test_snap.file_hashes.lock().unwrap().len() > 0);
+        let test_snap_b3 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        assert!(test_snap_b3.file_hashes.lock().unwrap().len() > 0);
+    }
+    #[test]
+    fn create_snapshot_md5() {
+        let test_snap_md5 = Snapshot::new(Path::new("/etc"), HashType::MD5, vec![]);
+        assert!(test_snap_md5.file_hashes.lock().unwrap().len() > 0);
+    }
+    #[test]
+    fn create_snapshot_sha3() {
+        let test_snap_sha3 = Snapshot::new(Path::new("/etc"), HashType::SHA3, vec![]);
+        assert!(test_snap_sha3.file_hashes.lock().unwrap().len() > 0);
     }
 
     #[test]
@@ -285,6 +295,13 @@ mod tests {
         let snapshot = import("./build/in.snapshot".to_string());
         assert!(snapshot.file_hashes.lock().unwrap().len() > 0);
         fs::remove_file(Path::new("./build/in.snapshot")).unwrap();
+    }
+
+    #[test]
+    fn creation_detection() {
+        let test_snap_creation = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        export(test_snap_creation.clone(), "./build/creation.snapshot".to_string(), true);
+
     }
 
 }
