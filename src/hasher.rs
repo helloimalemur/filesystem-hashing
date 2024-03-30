@@ -130,3 +130,27 @@ fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
 fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
     blake3::hash(bytes.as_slice()).as_bytes().to_vec()
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::hasher::{hash_blake3, hash_md5};
+
+    #[test]
+    fn blake3() {
+        let test_string = "aprettylongteststring".as_bytes();
+        let hashed = hash_blake3(test_string.to_vec());
+        // println!("{:#04X?}", hashed);
+        assert_eq!(hashed, [0xFD,0x5F,0x22,0xE8,0x95,0x82,0x18,0xD6,0x9A,0x96,0xAC,0x77,0xCD,0xCD,0xAA,0xA7,0x51,0xCE,0x81,0xF3,0x04,0x86,0xC8,0x49,0xA6,0xD7,0x66,0x81,0x68,0xDB,0x22,0x2D,])
+    }
+
+
+    #[test]
+    fn md5() {
+        let test_string = "adifferentbutstillprettylongteststring".as_bytes();
+        let hashed = hash_md5(test_string.to_vec());
+        // println!("{:#04X?}", hashed);
+        assert_eq!(hashed,[0x6C,0x39,0x5D,0xC4,0xC5,0x81,0xAE,0x7A,0x55,0x74,0xC4,0x5B,0xE3,0xFB,0x92,0x58])
+
+    }
+}
