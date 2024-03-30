@@ -205,7 +205,7 @@ pub fn export(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), E
 
     let serialized = serde_json::to_string(&serializable)?;
     // println!("{:#?}", serialized);
-    let filename = full_path.split('/').last().unwrap();
+    let filename = full_path.split('/').last().expect("unable to get full path");
     let path_only = full_path.replace(filename, "");
     // println!("{}", full_path);
     // println!("{}", path_only);
