@@ -264,72 +264,27 @@ mod tests {
     use std::time::SystemTime;
 
     #[test]
-    fn create_snapshot() {
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Full);
-        let _ = File::create(Path::new("/etc/test")).unwrap();
-
-        // let test_snap = Snapshot::new(Path::new("/"), HashType::Fast);
-        // let test_snap = Snapshot::new(Path::new("/var/"), HashType::Fast); // danger
-        // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Fast); // safe
-        // let test_snap = Snapshot::new(Path::new("/etc/"), HashType::Full); // safe
-        let start = SystemTime::now();
+    fn create_snapshot_blake3() {
         let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        let stop = SystemTime::now();
-        let lapsed = stop.duration_since(start).unwrap();
-        // println!("{:?}", lapsed);
-
-        let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
-        // let _ = fs::write(Path::new("/etc/test"), "asdf").unwrap();
-
-        let start2 = SystemTime::now();
-        // let test_snap = Snapshot::new(Path::new("/home/foxx/Downloads/"), HashType::Full);
-        let test_snap2 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        let stop2 = SystemTime::now();
-        let lapsed2 = stop2.duration_since(start2).unwrap();
-        // println!("{:?}", lapsed2);
-
-        let result = compare(test_snap.clone(), test_snap2.clone());
-        let compare_result = result.unwrap().1;
-
-        // println!("Created: {}", compare_result.created.len());
-        // println!("Deleted: {}", compare_result.deleted.len());
-        // println!("Changed: {}", compare_result.changed.len());
-
-        // let _ = fs::remove_file(Path::new("/etc/test")).unwrap();
-
-       // let test_snap = Snapshot::new(Path::new("/home/foxx/hashtest/"), HashType::Fast);
-       // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pcidocs/"), HashType::Fast);
-       // let test_snap = Snapshot::new(Path::new("/home/foxx/Documents/pci_lynis/"), HashType::Fast);
-
-        // println!(
-        //     "Sample: {:#?}",
-        //     test_snap.file_hashes.lock().unwrap().iter().last()
-        // );
-        println!("Files: {}", test_snap.file_hashes.lock().unwrap().len());
-
-
-        // for fi in test_snap.file_hashes.iter() {
-        //     println!("{}", fi.0)
-        // }
+        assert!(test_snap.file_hashes.lock().unwrap().len() > 0);
     }
 
     #[test]
     fn export_snapshot() {
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        export(test_snap.clone(), "/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string(), true);
-        export(test_snap.clone(), "./output/out.snapshot".to_string(), true);
-
-
+        assert!(!Path::new("./build/out.snapshot").exists());
+        let test_snap_export = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        export(test_snap_export.clone(), "./build/out.snapshot".to_string(), true);
+        assert!(Path::new("./build/out.snapshot").exists());
+        fs::remove_file(Path::new("./build/out.snapshot")).unwrap();
     }
 
     #[test]
     fn import_snapshot() {
-        let test_snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        let snap1 = import("/home/foxx/RustroverProjects/Fasching/output2/out.snapshot".to_string());
-        let snap2 = import("./output/out.snapshot".to_string());
-
-        println!("{:?}", snap2.file_hashes.lock().unwrap().len());
-
+        let test_snap_import = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        export(test_snap_import.clone(), "./build/in.snapshot".to_string(), true);
+        let snapshot = import("./build/in.snapshot".to_string());
+        assert!(snapshot.file_hashes.lock().unwrap().len() > 0);
+        fs::remove_file(Path::new("./build/in.snapshot")).unwrap();
     }
 
 }
