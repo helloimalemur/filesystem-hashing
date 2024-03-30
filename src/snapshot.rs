@@ -60,7 +60,7 @@ impl Snapshot {
         let mut hashers: Vec<JoinHandle<()>> = vec![];
 
         for p in file_paths.into_iter().flatten() {
-            let file_path = p.path().to_str().ok_or(anyhow!("path string error")).unwrap().to_string();
+            let file_path = p.path().to_str().expect("path_string_error").to_string();
             if p.path().is_file() && !black_list.contains(&file_path) {
                 let bind = file_hashes.clone();
 
@@ -136,7 +136,7 @@ pub fn compare(left: Snapshot, right: Snapshot) -> Option<(SnapshotChangeType, S
         Ok(e) => {
             for right_entry in e.iter() {
                 // check for file creations
-                if left.file_hashes.lock().unwrap().get(right_entry.0).is_none() {
+                if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
                     created.push(right_entry.0.to_string());
                 }
             }
@@ -203,21 +203,19 @@ pub fn export(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), E
         date_created: snapshot.date_created,
     };
 
-    let serialized = serde_json::to_string(&serializable).unwrap();
+    let serialized = serde_json::to_string(&serializable)?;
     // println!("{:#?}", serialized);
     let filename = full_path.split('/').last().unwrap();
     let path_only = full_path.replace(filename, "");
     // println!("{}", full_path);
     // println!("{}", path_only);
 
-    if Path::new(&full_path).exists() && overwrite {
-        let _ = fs::remove_file(&full_path).unwrap();
-        Ok(write_to_file(path_only, full_path, serialized)?)
+    Ok(if Path::new(&full_path).exists() && overwrite {
+        let _ = fs::remove_file(&full_path)?;
+        write_to_file(path_only, full_path, serialized)?
     } else if !Path::new(&full_path).exists() {
-        Ok(write_to_file(path_only, full_path, serialized)?)
-    } else {
-        return Err(anyhow!("Unable to export"));
-    }
+        write_to_file(path_only, full_path, serialized)?
+    })
 }
 
 fn write_to_file(path_only: String, full_path: String, serialized: String) -> Result<(), Error> {
@@ -236,7 +234,7 @@ pub fn import(path: String) -> Result<Snapshot, Error> {
     let mut buffer = BytesMut::new();
     let full_path = path_resolve(path);
     if let Ok(bytes) = fs::read(full_path) {
-        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&bytes).unwrap();
+        let snapshot= serde_json::from_slice::<SerializableSnapshot>(&bytes)?;
 
         let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
