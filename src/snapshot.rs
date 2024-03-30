@@ -262,6 +262,7 @@ mod tests {
     use super::*;
     use std::path::Path;
     use std::time::SystemTime;
+    use crate::compare_snapshots;
 
     #[test]
     fn create_snapshot_blake3() {
@@ -299,9 +300,44 @@ mod tests {
 
     #[test]
     fn creation_detection() {
-        let test_snap_creation = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
-        export(test_snap_creation.clone(), "./build/creation.snapshot".to_string(), true);
+        assert!(!Path::new("./build/test_creation/").exists());
+        fs::create_dir_all(Path::new("./build/test_creation/")).unwrap();
+        let test_snap_creation_1 = Snapshot::new(Path::new("./build/test_creation/"), HashType::BLAKE3, vec![]);
+        File::create(Path::new("./build/test_creation/test1")).unwrap();
+        File::create(Path::new("./build/test_creation/test2")).unwrap();
+        File::create(Path::new("./build/test_creation/test3")).unwrap();
+        let test_snap_creation_2 = Snapshot::new(Path::new("./build/test_creation/"), HashType::BLAKE3, vec![]);
+        assert_eq!(compare_snapshots(test_snap_creation_1, test_snap_creation_2).unwrap().1.created.len(), 3);
+        fs::remove_dir_all(Path::new("./build/test_creation/")).unwrap();
+    }
 
+    #[test]
+    fn deletion_detection() {
+        assert!(!Path::new("./build/test_deletion/").exists());
+        fs::create_dir_all(Path::new("./build/test_deletion/")).unwrap();
+        let test_snap_deletion_1 = Snapshot::new(Path::new("./build/test_deletion/"), HashType::BLAKE3, vec![]);
+        File::create(Path::new("./build/test_deletion/test1")).unwrap();
+        File::create(Path::new("./build/test_deletion/test2")).unwrap();
+        File::create(Path::new("./build/test_deletion/test3")).unwrap();
+        let test_snap_deletion_2 = Snapshot::new(Path::new("./build/test_deletion/"), HashType::BLAKE3, vec![]);
+        assert_eq!(compare_snapshots(test_snap_deletion_2, test_snap_deletion_1).unwrap().1.deleted.len(), 3);
+        fs::remove_dir_all(Path::new("./build/test_deletion/")).unwrap();
+    }
+
+    #[test]
+    fn change_detection() {
+        assert!(!Path::new("./build/test_change/").exists());
+        fs::create_dir_all(Path::new("./build/test_change/")).unwrap();
+        let mut file1 = File::create(Path::new("./build/test_change/test1")).unwrap();
+        let mut file2 = File::create(Path::new("./build/test_change/test2")).unwrap();
+        let mut file3 = File::create(Path::new("./build/test_change/test3")).unwrap();
+        let test_snap_change_1 = Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
+        file1.write_all("file1".as_bytes()).unwrap();
+        file2.write_all("file2".as_bytes()).unwrap();
+        file3.write_all("file3".as_bytes()).unwrap();
+        let test_snap_change_2 = Snapshot::new(Path::new("./build/test_change/"), HashType::BLAKE3, vec![]);
+        assert_eq!(compare_snapshots(test_snap_change_1, test_snap_change_2).unwrap().1.changed.len(), 3);
+        fs::remove_dir_all(Path::new("./build/test_change/")).unwrap();
     }
 
 }
