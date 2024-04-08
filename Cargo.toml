@@ -1,11 +1,11 @@
 [package]
-name = "Fasching"
+name = "filesystem-hashing"
 description = "Track Filesystem Integrity via 'Snapshots' containing hash of all files within specified directories."
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 authors = ["james@koonts.net"]
 license = "MIT"
-repository = "https://github.com/helloimalemur/fasching"
+repository = "https://github.com/helloimalemur/filesystem-hashing"
 keywords = ["file-integrity", "filesystem-integirty", "file-hashing", "folder-hashing", "filesystem-hashing"]
 readme = "README.md"
 
