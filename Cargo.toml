@@ -1,7 +1,7 @@
 [package]
 name = "filesystem-hashing"
 description = "Track Filesystem Integrity via 'Snapshots' containing hash of all files within specified directories."
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 authors = ["james@koonts.net"]
 license = "MIT"
