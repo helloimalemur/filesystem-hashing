@@ -87,40 +87,7 @@ impl Snapshot {
                     handle.join().expect("could not join handle")
                 }
             }
-
-
-            // let p = paths.pop().expect("invalid index").unwrap();
-            // let fp = p.path().to_str().expect("path_string_error").to_string();
-            // if Path::new(&fp).is_file() && !black_list.contains(&fp) {
-            //     let bind = file_hashes.clone();
-            //
-            //     let handle = thread::spawn(move || {
-            //         let mut binding = bind.lock();
-            //         let ht = binding.as_mut().expect("binding error");
-            //         if let Err(e) = hash_file(&p.path(), ht, hash_type) {
-            //             println!("Warning: {e}")
-            //         }
-            //     });
-            //     hashers.push(handle)
-            // }
         }
-
-
-        // for p in file_paths.into_iter().flatten() {
-        //     let file_path = p.path().to_str().expect("path_string_error").to_string();
-        //     if p.path().is_file() && !black_list.contains(&file_path) {
-        //         let bind = file_hashes.clone();
-        //
-        //         let handle = thread::spawn(move || {
-        //             let mut binding = bind.lock();
-        //             let ht = binding.as_mut().expect("binding error");
-        //             if let Err(e) = hash_file(p.path(), ht, hash_type) {
-        //                 println!("Warning: {e}")
-        //             }
-        //         });
-        //         hashers.push(handle)
-        //     }
-        // }
 
         for handle in hashers {
             handle.join().expect("could not join handle")
