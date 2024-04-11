@@ -83,7 +83,7 @@ pub fn hash_file(
     if let Ok(mut file_handle) = fs::File::open(path) {
 
         let mut buffer = Vec::new();
-        let chunk_size = 0x4000;
+        let chunk_size = 0x40;
 
         loop {
             let mut chunk = Vec::with_capacity(chunk_size);
