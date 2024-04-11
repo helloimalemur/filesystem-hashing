@@ -78,12 +78,11 @@ pub fn hash_file(
     let mut file_hash = BytesMut::new();
 
     if let Ok(file_handle) = fs::read(path) {
-        let bytes = file_handle.as_slice();
 
         let byte_hash = match hash_type {
-            HashType::MD5 => hash_md5(Vec::from(bytes)),
-            HashType::SHA3 => hash_sha3(Vec::from(bytes)),
-            HashType::BLAKE3 => hash_blake3(Vec::from(bytes)),
+            HashType::MD5 => hash_md5(file_handle),
+            HashType::SHA3 => hash_sha3(file_handle),
+            HashType::BLAKE3 => hash_blake3(file_handle),
         };
 
         file_hash.put_slice(&byte_hash);
@@ -117,7 +116,7 @@ fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
     let mut hasher = Sha3_256::new();
     let mut bytes_to_hash = BytesMut::new();
 
-    bytes_to_hash.put_slice(&bytes);
+    bytes_to_hash.put_slice(&*bytes);
     hasher.update(bytes_to_hash);
     hasher.finalize().to_vec()
 }
@@ -127,7 +126,7 @@ fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
 }
 
 fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
-    blake3::hash(bytes.as_slice()).as_bytes().to_vec()
+    blake3::hash(&*bytes).as_bytes().to_vec()
 }
 
 #[cfg(test)]
