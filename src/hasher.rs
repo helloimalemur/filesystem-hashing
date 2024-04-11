@@ -1,5 +1,5 @@
 use crate::snapshot::FileMetadata;
-use bytes::{BufMut, BytesMut};
+use bytes::{Buf, BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use sha3::digest::block_buffer::Error;
 use sha3::{Digest, Sha3_256};
@@ -8,6 +8,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
+use std::io::{Read, Write};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
@@ -75,14 +76,32 @@ pub fn hash_file(
         ino = metadata.ino();
     }
 
-    let mut file_hash = BytesMut::new();
+    let mut file_hash: Vec<u8> = Vec::new();
+    let mut file_buffer: Vec<u8> = Vec::new();
 
-    if let Ok(file_handle) = fs::read(path) {
+
+    if let Ok(mut file_handle) = fs::File::open(path) {
+
+        let mut buffer = Vec::new();
+        let chunk_size = 0x4000;
+
+        loop {
+            let mut chunk = Vec::with_capacity(chunk_size);
+            let n = std::io::Read::by_ref(&mut file_handle).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
+            if n == 0 { break; }
+            buffer.push(chunk);
+            if n < chunk_size { break; }
+        }
+
+        for e in buffer {
+            file_buffer.append(&mut e.clone())
+        }
+
 
         let byte_hash = match hash_type {
-            HashType::MD5 => hash_md5(file_handle),
-            HashType::SHA3 => hash_sha3(file_handle),
-            HashType::BLAKE3 => hash_blake3(file_handle),
+            HashType::MD5 => hash_md5(file_buffer),
+            HashType::SHA3 => hash_sha3(file_buffer),
+            HashType::BLAKE3 => hash_blake3(file_buffer),
         };
 
         file_hash.put_slice(&byte_hash);
