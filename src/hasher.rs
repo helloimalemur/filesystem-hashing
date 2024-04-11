@@ -24,7 +24,7 @@ pub struct HashResult {
     pub mtime: i64,
 }
 #[allow(unused)]
-pub fn hash_files(
+pub fn hash_file(
     path: &Path,
     file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>,
     hash_type: HashType,
