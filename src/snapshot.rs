@@ -70,7 +70,7 @@ impl Snapshot {
                 let handle = thread::spawn(move || {
                     let mut binding = bind.lock();
                     let ht = binding.as_mut().expect("binding error");
-                    if let Err(_) = hash_file(p.path(), ht, hash_type) {
+                    if let Err(e) = hash_file(p.path(), ht, hash_type) {
                         println!("Warning: {e}")
                     }
                 });
