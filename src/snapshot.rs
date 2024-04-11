@@ -61,7 +61,7 @@ impl Snapshot {
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
         let file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> =
             Arc::new(Mutex::new(HashMap::new()));
-        let mut hashers: Vec<JoinHandle<()>> = vec![];
+        let mut pool: Vec<JoinHandle<()>> = vec![];
 
         let mut paths: Vec<Option<DirEntry>> = vec![];
         file_paths.into_iter().flatten().for_each(|a| {
@@ -81,15 +81,15 @@ impl Snapshot {
                         println!("Warning: {e}")
                     }
                 });
-                hashers.push(handle);
-                if hashers.len() > 4 {
-                    let handle = hashers.pop().unwrap();
+                pool.push(handle);
+                if pool.len() > 4 {
+                    let handle = pool.pop().unwrap();
                     handle.join().expect("could not join handle")
                 }
             }
         }
 
-        for handle in hashers {
+        for handle in pool {
             handle.join().expect("could not join handle")
         }
 
