@@ -32,14 +32,3 @@ pub fn export_snapshot(snapshot: Snapshot, path: String, overwrite: bool) -> Res
 pub fn import_snapshot(path: String) -> Result<Snapshot, Error> {
     import(path)
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }
