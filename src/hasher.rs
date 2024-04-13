@@ -1,5 +1,5 @@
 use crate::snapshot::FileMetadata;
-use bytes::{Buf, BufMut, BytesMut};
+use bytes::{BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use sha3::digest::block_buffer::Error;
 use sha3::{Digest, Sha3_256};
@@ -150,7 +150,10 @@ fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::hasher::{hash_blake3, hash_md5, hash_sha3};
+    use std::fs;
+    use bytes::BufMut;
+    use sha3::digest::block_buffer::Error;
+    use crate::hasher::{hash_blake3, hash_md5, hash_sha3, HashType};
 
     #[test]
     fn blake3() {
@@ -195,5 +198,41 @@ mod tests {
                 0xBA, 0x26, 0x33, 0x7E,
             ]
         )
+    }
+
+    #[test]
+    fn test_load_large_file_buffer() {
+        let mut file_hash: Vec<u8> = Vec::new();
+        let mut file_buffer: Vec<u8> = Vec::new();
+
+        use std::io::Read;
+        if let Ok(mut file_handle) = fs::File::open("/home/foxx/sand.tar.gz") {
+
+            let mut buffer = Vec::new();
+            let chunk_size = 0x40;
+
+            loop {
+                let mut chunk = Vec::with_capacity(chunk_size);
+                let n = std::io::Read::by_ref(&mut file_handle).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
+                if n == 0 { break; }
+                buffer.push(chunk.clone());
+                println!("Chunk size: {}", chunk.len());
+                if n < chunk_size { break; }
+            }
+
+            for e in buffer {
+                file_buffer.append(&mut e.clone())
+            }
+
+
+            let byte_hash = match HashType::BLAKE3 {
+                HashType::MD5 => hash_md5(file_buffer),
+                HashType::SHA3 => hash_sha3(file_buffer),
+                HashType::BLAKE3 => hash_blake3(file_buffer),
+            };
+
+            file_hash.put_slice(&byte_hash);
+            drop(byte_hash);
+        }
     }
 }
