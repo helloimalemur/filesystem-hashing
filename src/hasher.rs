@@ -10,6 +10,7 @@ use std::sync::MutexGuard;
 use std::{env, fs};
 use std::fs::File;
 use std::io::{Read, Write};
+use sha3::digest::{DynDigest, Update};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
@@ -111,27 +112,54 @@ pub fn hash_file(
 
 fn hash_sha3(bytes: &Path) -> Result<Vec<u8>, Error> {
     let mut hasher = Sha3_256::new();
-    hasher.update(b"asdf");
+    if let Ok(mut f) = File::open(bytes) {
+        let chunk_size = 0x4000;
+        if let Ok(meta) = f.metadata() {
+            if meta.is_file() {
+                loop {
+                    let mut chunk = Vec::with_capacity(chunk_size);
+                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
+                    if n == 0 {
+                        break;
+                    }
+                    sha3::digest::Update::update(&mut hasher, chunk.by_ref());
+                    if n < chunk_size {
+                        break;
+                    }
+                }
+            }
+        }
+    }
     Ok(hasher.finalize().to_vec())
 }
 
 fn hash_md5(bytes: &Path) -> Result<Vec<u8>, Error> {
     let mut hasher = md5::Context::new();
-
-    hasher.consume(b"asdf");
-
-    Ok(hasher.compute().as_slice().to_vec())
+    if let Ok(mut f) = File::open(bytes) {
+        let chunk_size = 0x4000;
+        if let Ok(meta) = f.metadata() {
+            if meta.is_file() {
+                loop {
+                    let mut chunk = Vec::with_capacity(chunk_size);
+                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
+                    if n == 0 {
+                        break;
+                    }
+                    hasher.consume(chunk);
+                    if n < chunk_size {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    Ok(hasher.compute().0.to_vec())
 }
 
 fn hash_blake3(bytes: &Path) -> Result<Vec<u8>, Error> {
-    let mut file_hash = String::new();
     let mut hasher = blake3::Hasher::new();
-
     if let Ok(mut f) = File::open(bytes) {
-        // let mut f = File::open("/dev/zero").unwrap();
-
         let chunk_size = 0x4000;
-        let mut count = 0;
         if let Ok(meta) = f.metadata() {
             if meta.is_file() {
                 loop {
@@ -144,16 +172,11 @@ fn hash_blake3(bytes: &Path) -> Result<Vec<u8>, Error> {
                     if n < chunk_size {
                         break;
                     }
-
-                    count += 1;
                 }
-
-                file_hash = hasher.finalize().to_string();
-                println!("{}", file_hash);
             }
         }
     }
-    Ok(file_hash.as_bytes().to_vec())
+    Ok(hasher.finalize().as_bytes().to_vec())
 }
 
 #[cfg(test)]
