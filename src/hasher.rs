@@ -151,6 +151,7 @@ fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::io::{BufReader, Read, Write};
     use bytes::BufMut;
     use sha3::digest::block_buffer::Error;
     use crate::hasher::{hash_blake3, hash_md5, hash_sha3, HashType};
@@ -202,37 +203,38 @@ mod tests {
 
     #[test]
     fn test_load_large_file_buffer() {
-        let mut file_hash: Vec<u8> = Vec::new();
-        let mut file_buffer: Vec<u8> = Vec::new();
-
+        use std::fs::File;
         use std::io::Read;
-        if let Ok(mut file_handle) = fs::File::open("/home/foxx/sand.tar.gz") {
 
-            let mut buffer = Vec::new();
-            let chunk_size = 0x40;
 
-            loop {
-                let mut chunk = Vec::with_capacity(chunk_size);
-                let n = std::io::Read::by_ref(&mut file_handle).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
-                if n == 0 { break; }
-                buffer.push(chunk.clone());
-                println!("Chunk size: {}", chunk.len());
-                if n < chunk_size { break; }
+        let mut hasher = blake3::Hasher::new();
+
+        let mut f = File::open("/home/foxx/sand.tar.gz").unwrap();
+
+        let mut list_of_chunks = Vec::new();
+        let chunk_size = 0x4000;
+        let mut count = 0;
+        loop {
+            let mut chunk = Vec::with_capacity(chunk_size);
+            let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
+            
+            if n == 0 {
+                println!("chunk_count: {}", count);
+                break;
             }
-
-            for e in buffer {
-                file_buffer.append(&mut e.clone())
+            
+            hasher.update(chunk.as_ref());
+            list_of_chunks.push(chunk);
+            if n < chunk_size {
+                println!("End of file\nchunk_count: {}", count);
+                break;
             }
-
-
-            let byte_hash = match HashType::BLAKE3 {
-                HashType::MD5 => hash_md5(file_buffer),
-                HashType::SHA3 => hash_sha3(file_buffer),
-                HashType::BLAKE3 => hash_blake3(file_buffer),
-            };
-
-            file_hash.put_slice(&byte_hash);
-            drop(byte_hash);
+            
+            count += 1;
         }
+
+        let hash = hasher.finalize();
+        println!("{}", hash);
+        assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", hash.to_string())
     }
 }
