@@ -220,6 +220,8 @@ mod tests {
 
     #[test]
     fn sha3() {
+        let file = fs::remove_dir_all()
+        
         let test_string =
             "adifferentbutstillprettylongteststringwithaslightlydifferentcontent".as_bytes();
         let hashed = sha3::Sha3_256::digest(test_string).to_vec();
@@ -233,14 +235,4 @@ mod tests {
             ]
         )
     }
-
-    // #[test]
-    // fn test_load_large_file_buffer() {
-    //     use std::fs::File;
-    //     use std::io::Read;
-    //     let mut file_hash = String::new();
-    //
-    //     file_hash = String::from_utf8(hash_blake3(Path::new("/home/foxx/sand.tar.gz")).as_slice());
-    //     assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", file_hash)
-    // }
 }
