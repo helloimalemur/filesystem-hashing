@@ -1,4 +1,4 @@
-use crate::hasher::{hash_files, HashType};
+use crate::hasher::{hash_file, HashType};
 use anyhow::{anyhow, Error};
 use bytes::BytesMut;
 use chrono::Utc;
@@ -11,6 +11,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::{env, fs, thread};
+use walkdir::DirEntry;
 
 #[derive(Debug, Clone)]
 pub struct Snapshot {
@@ -60,9 +61,16 @@ impl Snapshot {
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
         let file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> =
             Arc::new(Mutex::new(HashMap::new()));
-        let mut hashers: Vec<JoinHandle<()>> = vec![];
+        let mut pool: Vec<JoinHandle<()>> = vec![];
 
-        for p in file_paths.into_iter().flatten() {
+        let mut paths: Vec<Option<DirEntry>> = vec![];
+        file_paths
+            .into_iter()
+            .flatten()
+            .for_each(|a| paths.push(Option::from(a)));
+
+        while !paths.is_empty() {
+            let p = paths.pop().unwrap().unwrap();
             let file_path = p.path().to_str().expect("path_string_error").to_string();
             if p.path().is_file() && !black_list.contains(&file_path) {
                 let bind = file_hashes.clone();
@@ -70,13 +78,19 @@ impl Snapshot {
                 let handle = thread::spawn(move || {
                     let mut binding = bind.lock();
                     let ht = binding.as_mut().expect("binding error");
-                    let _ = hash_files(p.path(), ht, hash_type);
+                    if let Err(e) = hash_file(p.path(), ht, hash_type) {
+                        println!("Warning: {e}")
+                    }
                 });
-                hashers.push(handle)
+                pool.push(handle);
+                if pool.len() > 4 {
+                    let handle = pool.pop().unwrap();
+                    handle.join().expect("could not join handle")
+                }
             }
         }
 
-        for handle in hashers {
+        for handle in pool {
             handle.join().expect("could not join handle")
         }
 
@@ -105,6 +119,7 @@ impl Default for Snapshot {
     }
 }
 
+#[derive(Debug)]
 pub enum SnapshotChangeType {
     None,
     Created,
@@ -400,13 +415,19 @@ mod tests {
         let mut file1 = File::create(Path::new("./target/build/test_change/test1")).unwrap();
         let mut file2 = File::create(Path::new("./target/build/test_change/test2")).unwrap();
         let mut file3 = File::create(Path::new("./target/build/test_change/test3")).unwrap();
-        let test_snap_change_1 =
-            Snapshot::new(Path::new("./target/build/test_change/"), HashType::BLAKE3, vec![]);
+        let test_snap_change_1 = Snapshot::new(
+            Path::new("./target/build/test_change/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         file1.write_all("file1".as_bytes()).unwrap();
         file2.write_all("file2".as_bytes()).unwrap();
         file3.write_all("file3".as_bytes()).unwrap();
-        let test_snap_change_2 =
-            Snapshot::new(Path::new("./target/build/test_change/"), HashType::BLAKE3, vec![]);
+        let test_snap_change_2 = Snapshot::new(
+            Path::new("./target/build/test_change/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         assert_eq!(
             compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
                 .unwrap()
