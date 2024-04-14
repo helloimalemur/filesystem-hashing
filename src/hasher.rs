@@ -1,5 +1,5 @@
 use crate::snapshot::FileMetadata;
-use bytes::{BufMut, BytesMut};
+use bytes::{BufMut};
 use serde::{Deserialize, Serialize};
 use anyhow::{anyhow, Error};
 use sha3::{Digest, Sha3_256};
@@ -181,19 +181,12 @@ fn hash_blake3(bytes: &Path) -> Result<Vec<u8>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::io::{BufReader, Read, Write};
-    use std::path::Path;
-    use bytes::BufMut;
     use sha3::Digest;
-    use sha3::digest::block_buffer::Error;
-    use crate::hasher::{hash_blake3, hash_md5, hash_sha3, HashType};
 
     #[test]
     fn blake3() {
         let test_string = "aprettylongteststring".as_bytes();
         let hashed = blake3::hash(test_string).as_bytes().to_vec();
-        // println!("{:#04X?}", hashed);
         assert_eq!(
             hashed,
             [
@@ -220,8 +213,6 @@ mod tests {
 
     #[test]
     fn sha3() {
-        let file = fs::remove_dir_all()
-        
         let test_string =
             "adifferentbutstillprettylongteststringwithaslightlydifferentcontent".as_bytes();
         let hashed = sha3::Sha3_256::digest(test_string).to_vec();
