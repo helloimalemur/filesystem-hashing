@@ -1,14 +1,14 @@
 use crate::snapshot::FileMetadata;
-use serde::{Deserialize, Serialize};
 use anyhow::{anyhow, Error};
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Read, Write};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
-use std::fs::File;
-use std::io::{Read, Write};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
@@ -79,13 +79,11 @@ pub fn hash_file(
     let mut file_hash: Vec<u8> = Vec::new();
     let mut file_buffer: Vec<u8> = Vec::new();
 
-
     let byte_hash: Result<Vec<u8>, Error> = match hash_type {
         HashType::MD5 => hash_md5(path),
         HashType::SHA3 => hash_sha3(path),
         HashType::BLAKE3 => hash_blake3(path),
     };
-
 
     match path.to_str() {
         None => return Err(anyhow!("cannot parse path")),
@@ -116,7 +114,9 @@ fn hash_sha3(bytes: &Path) -> Result<Vec<u8>, Error> {
             if meta.is_file() {
                 loop {
                     let mut chunk = Vec::with_capacity(chunk_size);
-                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
+                    let n = std::io::Read::by_ref(&mut f)
+                        .take(chunk_size as u64)
+                        .read_to_end(&mut chunk)?;
                     if n == 0 {
                         break;
                     }
@@ -139,7 +139,9 @@ fn hash_md5(bytes: &Path) -> Result<Vec<u8>, Error> {
             if meta.is_file() {
                 loop {
                     let mut chunk = Vec::with_capacity(chunk_size);
-                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
+                    let n = std::io::Read::by_ref(&mut f)
+                        .take(chunk_size as u64)
+                        .read_to_end(&mut chunk)?;
                     if n == 0 {
                         break;
                     }
@@ -162,7 +164,9 @@ fn hash_blake3(bytes: &Path) -> Result<Vec<u8>, Error> {
             if meta.is_file() {
                 loop {
                     let mut chunk = Vec::with_capacity(chunk_size);
-                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
+                    let n = std::io::Read::by_ref(&mut f)
+                        .take(chunk_size as u64)
+                        .read_to_end(&mut chunk)?;
                     if n == 0 {
                         break;
                     }

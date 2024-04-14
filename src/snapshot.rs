@@ -64,9 +64,10 @@ impl Snapshot {
         let mut pool: Vec<JoinHandle<()>> = vec![];
 
         let mut paths: Vec<Option<DirEntry>> = vec![];
-        file_paths.into_iter().flatten().for_each(|a| {
-            paths.push(Option::from(a))
-        });
+        file_paths
+            .into_iter()
+            .flatten()
+            .for_each(|a| paths.push(Option::from(a)));
 
         while !paths.is_empty() {
             let p = paths.pop().unwrap().unwrap();
@@ -414,13 +415,19 @@ mod tests {
         let mut file1 = File::create(Path::new("./target/build/test_change/test1")).unwrap();
         let mut file2 = File::create(Path::new("./target/build/test_change/test2")).unwrap();
         let mut file3 = File::create(Path::new("./target/build/test_change/test3")).unwrap();
-        let test_snap_change_1 =
-            Snapshot::new(Path::new("./target/build/test_change/"), HashType::BLAKE3, vec![]);
+        let test_snap_change_1 = Snapshot::new(
+            Path::new("./target/build/test_change/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         file1.write_all("file1".as_bytes()).unwrap();
         file2.write_all("file2".as_bytes()).unwrap();
         file3.write_all("file3".as_bytes()).unwrap();
-        let test_snap_change_2 =
-            Snapshot::new(Path::new("./target/build/test_change/"), HashType::BLAKE3, vec![]);
+        let test_snap_change_2 = Snapshot::new(
+            Path::new("./target/build/test_change/"),
+            HashType::BLAKE3,
+            vec![],
+        );
         assert_eq!(
             compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
                 .unwrap()
