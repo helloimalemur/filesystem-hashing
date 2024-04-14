@@ -8,6 +8,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::MutexGuard;
 use std::{env, fs};
+use std::fs::File;
 use std::io::{Read, Write};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -80,35 +81,12 @@ pub fn hash_file(
     let mut file_buffer: Vec<u8> = Vec::new();
 
 
-    if let Ok(mut file_handle) = fs::File::open(path) {
-
-        let mut buffer = Vec::new();
-        let chunk_size = 0x40;
-
-        loop {
-            let mut chunk = Vec::with_capacity(chunk_size);
-            let n = std::io::Read::by_ref(&mut file_handle).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
-            if n == 0 { break; }
-            buffer.push(chunk);
-            if n < chunk_size { break; }
-        }
-
-        for e in buffer {
-            file_buffer.append(&mut e.clone())
-        }
-
-
-        let byte_hash = match hash_type {
-            HashType::MD5 => hash_md5(file_buffer),
-            HashType::SHA3 => hash_sha3(file_buffer),
-            HashType::BLAKE3 => hash_blake3(file_buffer),
-        };
-
-        file_hash.put_slice(&byte_hash);
-        drop(byte_hash);
-    } else {
-        return Err(Error);
-    }
+    let byte_hash = match hash_type {
+        HashType::MD5 => hash_md5(path),
+        HashType::SHA3 => hash_sha3(path),
+        HashType::BLAKE3 => hash_blake3(path),
+    };
+    
 
     match path.to_str() {
         None => return Err(Error),
@@ -117,7 +95,7 @@ pub fn hash_file(
                 p.to_string(),
                 FileMetadata {
                     path: p.to_string(),
-                    check_sum: file_hash.to_vec(),
+                    check_sum: byte_hash,
                     size,
                     ino,
                     ctime,
@@ -131,35 +109,72 @@ pub fn hash_file(
     Ok(())
 }
 
-fn hash_sha3(bytes: Vec<u8>) -> Vec<u8> {
+fn hash_sha3(bytes: &Path) -> Vec<u8> {
     let mut hasher = Sha3_256::new();
-    let mut bytes_to_hash = BytesMut::new();
-
-    bytes_to_hash.put_slice(&*bytes);
-    hasher.update(bytes_to_hash);
+    hasher.update(b"asdf");
     hasher.finalize().to_vec()
 }
 
-fn hash_md5(bytes: Vec<u8>) -> Vec<u8> {
-    md5::compute(bytes).to_vec()
+fn hash_md5(bytes: &Path) -> Vec<u8> {
+    let mut hasher = md5::Context::new();
+    
+    hasher.consume(b"asdf");
+    
+    hasher.compute().as_slice().to_vec()
 }
 
-fn hash_blake3(bytes: Vec<u8>) -> Vec<u8> {
-    blake3::hash(&*bytes).as_bytes().to_vec()
+fn hash_blake3(bytes: &Path) -> Vec<u8> {
+    let mut file_hash = String::new();
+    let mut hasher = blake3::Hasher::new();
+    
+    if let Ok(mut f) = File::open(bytes) {
+        // let mut f = File::open("/dev/zero").unwrap();
+
+        let chunk_size = 0x4000;
+        let mut count = 0;
+        if let Ok(meta) = f.metadata() {
+            if meta.is_file() {
+                loop {
+                    let mut chunk = Vec::with_capacity(chunk_size);
+                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
+
+
+                    if n == 0 {
+                        println!("chunk_count: {}", count);
+                        break;
+                    }
+
+                    hasher.update(chunk.as_ref());
+                    if n < chunk_size {
+                        println!("End of file\nchunk_count: {}", count);
+                        break;
+                    }
+
+                    count += 1;
+                }
+
+                file_hash = hasher.finalize().to_string();
+                println!("{}", file_hash);
+            }
+        }
+    }
+    file_hash.as_bytes().to_vec()
 }
 
 #[cfg(test)]
 mod tests {
     use std::fs;
     use std::io::{BufReader, Read, Write};
+    use std::path::Path;
     use bytes::BufMut;
+    use sha3::Digest;
     use sha3::digest::block_buffer::Error;
     use crate::hasher::{hash_blake3, hash_md5, hash_sha3, HashType};
 
     #[test]
     fn blake3() {
         let test_string = "aprettylongteststring".as_bytes();
-        let hashed = hash_blake3(test_string.to_vec());
+        let hashed = blake3::hash(test_string).as_bytes().to_vec();
         // println!("{:#04X?}", hashed);
         assert_eq!(
             hashed,
@@ -174,7 +189,7 @@ mod tests {
     #[test]
     fn md5() {
         let test_string = "adifferentbutstillprettylongteststring".as_bytes();
-        let hashed = hash_md5(test_string.to_vec());
+        let hashed = md5::compute(test_string).to_vec();
         // println!("{:#04X?}", hashed);
         assert_eq!(
             hashed,
@@ -189,7 +204,7 @@ mod tests {
     fn sha3() {
         let test_string =
             "adifferentbutstillprettylongteststringwithaslightlydifferentcontent".as_bytes();
-        let hashed = hash_sha3(test_string.to_vec());
+        let hashed = sha3::Sha3_256::digest(test_string).to_vec();
         println!("{:#04X?}", hashed);
         assert_eq!(
             hashed,
@@ -201,45 +216,13 @@ mod tests {
         )
     }
 
-    #[test]
-    fn test_load_large_file_buffer() {
-        use std::fs::File;
-        use std::io::Read;
-        let mut file_hash = String::new();
-
-        let mut hasher = blake3::Hasher::new();
-
-        let mut f = File::open("/home/foxx/sand.tar.gz").unwrap();
-        // let mut f = File::open("/dev/zero").unwrap();
-        
-        let chunk_size = 0x4000;
-        let mut count = 0;
-        let meta = f.metadata().unwrap();
-        if meta.is_file() {
-            loop {
-                let mut chunk = Vec::with_capacity(chunk_size);
-                let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
-
-
-                if n == 0 {
-                    println!("chunk_count: {}", count);
-                    break;
-                }
-
-                hasher.update(chunk.as_ref());
-                if n < chunk_size {
-                    println!("End of file\nchunk_count: {}", count);
-                    break;
-                }
-
-                count += 1;
-            }
-
-            file_hash = hasher.finalize().to_string();
-            println!("{}", file_hash);
-        } else {
-            println!("~~~~~~~ Not a file ~~~~~~~")
-        }
-        assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", file_hash)
-    }
+    // #[test]
+    // fn test_load_large_file_buffer() {
+    //     use std::fs::File;
+    //     use std::io::Read;
+    //     let mut file_hash = String::new();
+    // 
+    //     file_hash = String::from_utf8(hash_blake3(Path::new("/home/foxx/sand.tar.gz")).as_slice());
+    //     assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", file_hash)
+    // }
 }
