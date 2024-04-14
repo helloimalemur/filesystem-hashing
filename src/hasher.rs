@@ -205,36 +205,41 @@ mod tests {
     fn test_load_large_file_buffer() {
         use std::fs::File;
         use std::io::Read;
-
+        let mut file_hash = String::new();
 
         let mut hasher = blake3::Hasher::new();
 
         let mut f = File::open("/home/foxx/sand.tar.gz").unwrap();
-
-        let mut list_of_chunks = Vec::new();
+        // let mut f = File::open("/dev/zero").unwrap();
+        
         let chunk_size = 0x4000;
         let mut count = 0;
-        loop {
-            let mut chunk = Vec::with_capacity(chunk_size);
-            let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
-            
-            if n == 0 {
-                println!("chunk_count: {}", count);
-                break;
-            }
-            
-            hasher.update(chunk.as_ref());
-            list_of_chunks.push(chunk);
-            if n < chunk_size {
-                println!("End of file\nchunk_count: {}", count);
-                break;
-            }
-            
-            count += 1;
-        }
+        let meta = f.metadata().unwrap();
+        if meta.is_file() {
+            loop {
+                let mut chunk = Vec::with_capacity(chunk_size);
+                let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
 
-        let hash = hasher.finalize();
-        println!("{}", hash);
-        assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", hash.to_string())
+
+                if n == 0 {
+                    println!("chunk_count: {}", count);
+                    break;
+                }
+
+                hasher.update(chunk.as_ref());
+                if n < chunk_size {
+                    println!("End of file\nchunk_count: {}", count);
+                    break;
+                }
+
+                count += 1;
+            }
+
+            file_hash = hasher.finalize().to_string();
+            println!("{}", file_hash);
+        } else {
+            println!("~~~~~~~ Not a file ~~~~~~~")
+        }
+        assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", file_hash)
     }
 }
