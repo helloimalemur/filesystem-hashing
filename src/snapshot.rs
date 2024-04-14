@@ -118,6 +118,7 @@ impl Default for Snapshot {
     }
 }
 
+#[derive(Debug)]
 pub enum SnapshotChangeType {
     None,
     Created,

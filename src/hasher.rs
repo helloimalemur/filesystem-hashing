@@ -1,5 +1,4 @@
 use crate::snapshot::FileMetadata;
-use bytes::{BufMut};
 use serde::{Deserialize, Serialize};
 use anyhow::{anyhow, Error};
 use sha3::{Digest, Sha3_256};
@@ -10,7 +9,6 @@ use std::sync::MutexGuard;
 use std::{env, fs};
 use std::fs::File;
 use std::io::{Read, Write};
-use sha3::digest::{DynDigest, Update};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HashType {
