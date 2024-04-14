@@ -1,7 +1,7 @@
 use crate::snapshot::FileMetadata;
 use bytes::{BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
-use sha3::digest::block_buffer::Error;
+use anyhow::{anyhow, Error};
 use sha3::{Digest, Sha3_256};
 use std::collections::HashMap;
 use std::os::unix::fs::MetadataExt;
@@ -35,22 +35,22 @@ pub fn hash_file(
     if path.starts_with("./") {
         if let Ok(cwd) = env::current_dir() {
             match cwd.to_str() {
-                None => return Err(Error),
+                None => return Err(anyhow!("cannot parse path")),
                 Some(c) => full_path.push_str(c),
             }
             full_path.push('/');
 
             match path.to_str() {
-                None => return Err(Error),
+                None => return Err(anyhow!("cannot parse path")),
                 Some(p) => match p.split("./").last() {
-                    None => return Err(Error),
+                    None => return Err(anyhow!("cannot parse path")),
                     Some(p) => full_path.push_str(p),
                 },
             }
         }
     } else {
         match path.to_str() {
-            None => return Err(Error),
+            None => return Err(anyhow!("cannot parse path")),
             Some(p) => {
                 full_path.push_str(p);
             }
@@ -61,7 +61,7 @@ pub fn hash_file(
 
     for entry in black_list {
         if full_path.starts_with(entry) {
-            return Err(Error);
+            return Err(anyhow!("cannot parse path"));
         }
     }
 
@@ -81,21 +81,21 @@ pub fn hash_file(
     let mut file_buffer: Vec<u8> = Vec::new();
 
 
-    let byte_hash = match hash_type {
+    let byte_hash: Result<Vec<u8>, Error> = match hash_type {
         HashType::MD5 => hash_md5(path),
         HashType::SHA3 => hash_sha3(path),
         HashType::BLAKE3 => hash_blake3(path),
     };
-    
+
 
     match path.to_str() {
-        None => return Err(Error),
+        None => return Err(anyhow!("cannot parse path")),
         Some(p) => {
             file_hashes.insert(
                 p.to_string(),
                 FileMetadata {
                     path: p.to_string(),
-                    check_sum: byte_hash,
+                    check_sum: byte_hash?,
                     size,
                     ino,
                     ctime,
@@ -109,24 +109,24 @@ pub fn hash_file(
     Ok(())
 }
 
-fn hash_sha3(bytes: &Path) -> Vec<u8> {
+fn hash_sha3(bytes: &Path) -> Result<Vec<u8>, Error> {
     let mut hasher = Sha3_256::new();
     hasher.update(b"asdf");
-    hasher.finalize().to_vec()
+    Ok(hasher.finalize().to_vec())
 }
 
-fn hash_md5(bytes: &Path) -> Vec<u8> {
+fn hash_md5(bytes: &Path) -> Result<Vec<u8>, Error> {
     let mut hasher = md5::Context::new();
-    
+
     hasher.consume(b"asdf");
-    
-    hasher.compute().as_slice().to_vec()
+
+    Ok(hasher.compute().as_slice().to_vec())
 }
 
-fn hash_blake3(bytes: &Path) -> Vec<u8> {
+fn hash_blake3(bytes: &Path) -> Result<Vec<u8>, Error> {
     let mut file_hash = String::new();
     let mut hasher = blake3::Hasher::new();
-    
+
     if let Ok(mut f) = File::open(bytes) {
         // let mut f = File::open("/dev/zero").unwrap();
 
@@ -136,17 +136,12 @@ fn hash_blake3(bytes: &Path) -> Vec<u8> {
             if meta.is_file() {
                 loop {
                     let mut chunk = Vec::with_capacity(chunk_size);
-                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk).unwrap();
-
-
+                    let n = std::io::Read::by_ref(&mut f).take(chunk_size as u64).read_to_end(&mut chunk)?;
                     if n == 0 {
-                        println!("chunk_count: {}", count);
                         break;
                     }
-
                     hasher.update(chunk.as_ref());
                     if n < chunk_size {
-                        println!("End of file\nchunk_count: {}", count);
                         break;
                     }
 
@@ -158,7 +153,7 @@ fn hash_blake3(bytes: &Path) -> Vec<u8> {
             }
         }
     }
-    file_hash.as_bytes().to_vec()
+    Ok(file_hash.as_bytes().to_vec())
 }
 
 #[cfg(test)]
@@ -221,7 +216,7 @@ mod tests {
     //     use std::fs::File;
     //     use std::io::Read;
     //     let mut file_hash = String::new();
-    // 
+    //
     //     file_hash = String::from_utf8(hash_blake3(Path::new("/home/foxx/sand.tar.gz")).as_slice());
     //     assert_eq!("f57749c58cd9518ab2eee385d5411b9f2ab34e6e3b50056aa43459f740c11fe6", file_hash)
     // }
