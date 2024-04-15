@@ -1,9 +1,8 @@
 #### filesystem-hashing
 
-## Track Filesystem Integrity via "Snapshots"
-    ~ Snapshots contain a HashMap containting all the files within specified directories,
-    and their corresponding hash signature.
-    ~ Snapshots are exported as JSON files.
+## Track Filesystem Integrity via Snapshots
+    ~ contain a HashMap of the files and their corresponding hash signature from a specified directory.
+    ~ are exported as JSON files.
 
 ## Snapshot structure
 ```rust
