@@ -1,7 +1,7 @@
 [package]
 name = "filesystem-hashing"
 description = "Track Filesystem Integrity via Snapshots which contain a HashMap of the files and their corresponding hash signature from a specified directory"
-version = "0.2.8"
+version = "0.2.9"
 edition = "2021"
 authors = ["james@koonts.net"]
 license = "MIT"
@@ -19,7 +19,7 @@ rand = "0.9.0-alpha.1"
 md5 = "0.7.0"
 log = "0.4.21"
 blake3 = "1.5.1"
-chrono = "0.4.37"
+chrono = "0.4.38"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 thiserror = "1.0.58"
