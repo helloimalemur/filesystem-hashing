@@ -317,6 +317,37 @@ mod tests {
     use std::path::Path;
 
     #[test]
+    fn dangerous() {
+        let mut snap = Snapshot::new(Path::new("/proc"), HashType::BLAKE3, vec![
+            "testkey".to_string(),
+            "/dev".to_string(),
+            "/proc".to_string(),
+            "/tmp".to_string(),
+
+        ]);
+        assert!(snap.is_ok());
+
+        let mut snap = Snapshot::new(Path::new("/dev"), HashType::BLAKE3, vec![
+            "testkey".to_string(),
+            "/dev".to_string(),
+            "/proc".to_string(),
+            "/tmp".to_string(),
+
+        ]);
+        assert!(snap.is_ok());
+
+        let mut snap = Snapshot::new(Path::new("/tmp"), HashType::BLAKE3, vec![
+            "testkey".to_string(),
+            "/dev".to_string(),
+            "/proc".to_string(),
+            "/tmp".to_string(),
+
+        ]);
+        assert!(snap.is_ok());
+    }
+
+
+    #[test]
     fn blacklist() {
         let mut snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec!["testkey".to_string()]).unwrap();
         println!("{:#?}", snap.clone().black_list);
