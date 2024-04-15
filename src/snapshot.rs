@@ -71,8 +71,14 @@ impl Snapshot {
 
         while !paths.is_empty() {
             let p = paths.pop().unwrap().unwrap();
-            let file_path = p.path().to_str().expect("path_string_error").to_string();
-            if p.path().is_file() && !black_list.contains(&file_path) {
+            let mut blacklisted = false;
+            black_list.iter().for_each(|bl| {
+                if p.path().to_str().unwrap().starts_with(bl) {
+                    blacklisted = true
+                }
+            });
+
+            if p.path().is_file() && !blacklisted {
                 let bind = file_hashes.clone();
 
                 let handle = thread::spawn(move || {
@@ -309,6 +315,14 @@ mod tests {
     use std::fs;
     use std::fs::File;
     use std::path::Path;
+
+    #[test]
+    fn blacklist() {
+        let mut snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec!["testkey".to_string()]).unwrap();
+        println!("{:#?}", snap.clone().black_list);
+        assert_eq!(snap.black_list.pop().unwrap(), "testkey".to_string());
+    }
+
 
     #[test]
     fn create_snapshot_blake3() {
