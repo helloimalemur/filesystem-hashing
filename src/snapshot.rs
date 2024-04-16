@@ -70,28 +70,34 @@ impl Snapshot {
             .for_each(|a| paths.push(Option::from(a)));
 
         while !paths.is_empty() {
-            let p = paths.pop().unwrap().unwrap();
-            let mut blacklisted = false;
-            black_list.iter().for_each(|bl| {
-                if p.path().to_str().unwrap().starts_with(bl) {
-                    blacklisted = true
-                }
-            });
+            if let Some(p) = paths.pop() {
+                if let Some(p) = p {
+                    let mut blacklisted = false;
+                    black_list.iter().for_each(|bl| {
+                        if let Some(a) = p.path().to_str() {
+                            if a.starts_with(bl) {
+                                blacklisted = true
+                            }
+                        }
+                    });
 
-            if p.path().is_file() && !blacklisted {
-                let bind = file_hashes.clone();
+                    if p.path().is_file() && !blacklisted {
+                        let bind = file_hashes.clone();
 
-                let handle = thread::spawn(move || {
-                    let mut binding = bind.lock();
-                    let ht = binding.as_mut().expect("binding error");
-                    if let Err(e) = hash_file(p.path(), ht, hash_type) {
-                        println!("Warning: {e}")
+                        let handle = thread::spawn(move || {
+                            let mut binding = bind.lock();
+                            let ht = binding.as_mut().expect("binding error");
+                            if let Err(e) = hash_file(p.path(), ht, hash_type) {
+                                println!("Warning: {e}")
+                            }
+                        });
+                        pool.push(handle);
+                        if pool.len() > 4 {
+                            if let Some(handle) = pool.pop() {
+                                handle.join().expect("could not join handle")
+                            }
+                        }
                     }
-                });
-                pool.push(handle);
-                if pool.len() > 4 {
-                    let handle = pool.pop().unwrap();
-                    handle.join().expect("could not join handle")
                 }
             }
         }
