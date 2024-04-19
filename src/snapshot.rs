@@ -205,15 +205,15 @@ pub fn compare_hashes(
     ))
 }
 
-pub fn compare_hashes_and_change_time(
+pub fn compare_hashes_and_modify_date(
     left: Snapshot,
     right: Snapshot,
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
     #[allow(unused)]
         let success = true;
-    let mut hash_created: Vec<String> = vec![];
-    let mut hash_deleted: Vec<String> = vec![];
-    let mut hash_changed: Vec<String> = vec![];
+    let mut created: Vec<String> = vec![];
+    let mut deleted: Vec<String> = vec![];
+    let mut changed: Vec<String> = vec![];
 
     if let Ok(left_lock) = left.file_hashes.lock() {
         // for each entry in the hash list
@@ -222,13 +222,19 @@ pub fn compare_hashes_and_change_time(
                 match curr_lock.get(left_entry.0) {
                     // check for mis-matching checksum between L and R
                     Some(right_entry) => {
+                        // compare hashsum
                         if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
-                            hash_changed.push(right_entry.path.to_string());
+                            changed.push(right_entry.path.to_string());
                         }
+                        // compare modify date
+                        if !right_entry.mtime.eq(&left_entry.1.mtime) || !right_entry.ctime.eq(&left_entry.1.ctime) {
+                            changed.push(right_entry.path.to_string());
+                        }
+
                     }
                     // check for deletion == files that exist in L and missing from R
                     None => {
-                        hash_deleted.push(left_entry.0.to_string());
+                        deleted.push(left_entry.0.to_string());
                     }
                 }
             }
@@ -239,28 +245,28 @@ pub fn compare_hashes_and_change_time(
     if let Ok(e) = right.file_hashes.lock() {
         for right_entry in e.iter() {
             if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
-                hash_created.push(right_entry.0.to_string());
+                created.push(right_entry.0.to_string());
             }
         }
     }
 
     let mut return_type = SnapshotChangeType::None;
-    if !hash_created.is_empty() {
+    if !created.is_empty() {
         return_type = SnapshotChangeType::Created;
     }
-    if !hash_deleted.is_empty() {
+    if !deleted.is_empty() {
         return_type = SnapshotChangeType::Deleted;
     }
-    if !hash_changed.is_empty() {
+    if !changed.is_empty() {
         return_type = SnapshotChangeType::Changed;
     }
 
     Some((
         return_type,
         SnapshotCompareResult {
-            created: hash_created,
-            deleted: hash_deleted,
-            changed: hash_changed,
+            created,
+            deleted,
+            changed,
         },
     ))
 }
@@ -378,7 +384,7 @@ pub fn import(path: String) -> Result<Snapshot, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::compare_snapshots;
+    use crate::{compare_snapshots, compare_snapshots_including_modify_date};
     use std::fs;
     use std::fs::File;
     use std::path::Path;
@@ -549,5 +555,40 @@ mod tests {
             3
         );
         fs::remove_dir_all(Path::new("./target/build/test_change/")).unwrap();
+    }
+
+    #[test]
+    fn change_detection_including_modify_date() {
+        assert!(!Path::new("./target/build/test_change_modify/").exists());
+        fs::create_dir_all(Path::new("./target/build/test_change_modify/")).unwrap();
+        let _ = File::create(Path::new("./target/build/test_change_modify/test1")).unwrap();
+        let _ = File::create(Path::new("./target/build/test_change_modify/test2")).unwrap();
+        let _ = File::create(Path::new("./target/build/test_change_modify/test3")).unwrap();
+        let test_snap_change_1 = Snapshot::new(
+            Path::new("./target/build/test_change_modify/"),
+            HashType::BLAKE3,
+            vec![],
+        );
+        let _ = fs::remove_file(Path::new("./target/build/test_change_modify/test1")).unwrap();
+        let _ = fs::remove_file(Path::new("./target/build/test_change_modify/test2")).unwrap();
+        let _ = fs::remove_file(Path::new("./target/build/test_change_modify/test3")).unwrap();
+
+        let _ = File::create(Path::new("./target/build/test_change_modify/test1")).unwrap();
+        let _ = File::create(Path::new("./target/build/test_change_modify/test2")).unwrap();
+        let _ = File::create(Path::new("./target/build/test_change_modify/test3")).unwrap();
+        let test_snap_change_2 = Snapshot::new(
+            Path::new("./target/build/test_change_modify/"),
+            HashType::BLAKE3,
+            vec![],
+        );
+        assert_ne!(
+            compare_snapshots_including_modify_date(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
+                .unwrap()
+                .1
+                .changed
+                .len(),
+            3
+        );
+        fs::remove_dir_all(Path::new("./target/build/test_change_modify/")).unwrap();
     }
 }

@@ -25,6 +25,13 @@ pub fn compare_snapshots(
     compare_hashes(left, right)
 }
 
+pub fn compare_snapshots_including_modify_date(
+    left: Snapshot,
+    right: Snapshot,
+) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
+    compare_hashes(left, right)
+}
+
 pub fn export_snapshot(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), Error> {
     export(snapshot, path, overwrite)
 }
