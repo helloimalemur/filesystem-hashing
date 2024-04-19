@@ -70,6 +70,7 @@ impl Snapshot {
             .for_each(|a| paths.push(Option::from(a)));
 
         while !paths.is_empty() {
+            #[allow(clippy::collapsible_match)]
             if let Some(p) = paths.pop() {
                 if let Some(p) = p {
                     let mut blacklisted = false;
