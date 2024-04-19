@@ -146,7 +146,7 @@ pub struct SnapshotCompareResult {
     pub changed: Vec<String>,
 }
 
-pub fn compare(
+pub fn compare_hashes(
     left: Snapshot,
     right: Snapshot,
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
@@ -161,13 +161,13 @@ pub fn compare(
         for left_entry in left_lock.iter() {
             if let Ok(curr_lock) = right.file_hashes.lock() {
                 match curr_lock.get(left_entry.0) {
-                    // check for mis-matching checksum
+                    // check for mis-matching checksum between L and R
                     Some(right_entry) => {
                         if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
                             changed.push(right_entry.path.to_string());
                         }
                     }
-                    // check for deletion
+                    // check for deletion == files that exist in L and missing from R
                     None => {
                         deleted.push(left_entry.0.to_string());
                     }
@@ -175,10 +175,9 @@ pub fn compare(
             }
         }
     }
-
+    // check for creation == check for files that exist in R but do not exist in L
     if let Ok(e) = right.file_hashes.lock() {
         for right_entry in e.iter() {
-            // check for file creations
             if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
                 created.push(right_entry.0.to_string());
             }
@@ -205,6 +204,68 @@ pub fn compare(
         },
     ))
 }
+
+pub fn compare_hashes_and_change_time(
+    left: Snapshot,
+    right: Snapshot,
+) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
+    #[allow(unused)]
+        let success = true;
+    let mut hash_created: Vec<String> = vec![];
+    let mut hash_deleted: Vec<String> = vec![];
+    let mut hash_changed: Vec<String> = vec![];
+
+    if let Ok(left_lock) = left.file_hashes.lock() {
+        // for each entry in the hash list
+        for left_entry in left_lock.iter() {
+            if let Ok(curr_lock) = right.file_hashes.lock() {
+                match curr_lock.get(left_entry.0) {
+                    // check for mis-matching checksum between L and R
+                    Some(right_entry) => {
+                        if !right_entry.check_sum.eq(&left_entry.1.check_sum) {
+                            hash_changed.push(right_entry.path.to_string());
+                        }
+                    }
+                    // check for deletion == files that exist in L and missing from R
+                    None => {
+                        hash_deleted.push(left_entry.0.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // check for creation == check for files that exist in R but do not exist in L
+    if let Ok(e) = right.file_hashes.lock() {
+        for right_entry in e.iter() {
+            if left.file_hashes.lock().ok()?.get(right_entry.0).is_none() {
+                hash_created.push(right_entry.0.to_string());
+            }
+        }
+    }
+
+    let mut return_type = SnapshotChangeType::None;
+    if !hash_created.is_empty() {
+        return_type = SnapshotChangeType::Created;
+    }
+    if !hash_deleted.is_empty() {
+        return_type = SnapshotChangeType::Deleted;
+    }
+    if !hash_changed.is_empty() {
+        return_type = SnapshotChangeType::Changed;
+    }
+
+    Some((
+        return_type,
+        SnapshotCompareResult {
+            created: hash_created,
+            deleted: hash_deleted,
+            changed: hash_changed,
+        },
+    ))
+}
+
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SerializableSnapshot {
