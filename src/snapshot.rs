@@ -210,7 +210,7 @@ pub fn compare_hashes_and_modify_date(
     right: Snapshot,
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
     #[allow(unused)]
-        let success = true;
+    let success = true;
     let mut created: Vec<String> = vec![];
     let mut deleted: Vec<String> = vec![];
     let mut changed: Vec<String> = vec![];
@@ -227,10 +227,11 @@ pub fn compare_hashes_and_modify_date(
                             changed.push(right_entry.path.to_string());
                         }
                         // compare modify date
-                        if !right_entry.mtime.eq(&left_entry.1.mtime) || !right_entry.ctime.eq(&left_entry.1.ctime) {
+                        if !right_entry.mtime.eq(&left_entry.1.mtime)
+                            || !right_entry.ctime.eq(&left_entry.1.ctime)
+                        {
                             changed.push(right_entry.path.to_string());
                         }
-
                     }
                     // check for deletion == files that exist in L and missing from R
                     None => {
@@ -270,8 +271,6 @@ pub fn compare_hashes_and_modify_date(
         },
     ))
 }
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SerializableSnapshot {
@@ -391,42 +390,54 @@ mod tests {
 
     #[test]
     fn dangerous() {
-        let mut snap = Snapshot::new(Path::new("/proc"), HashType::BLAKE3, vec![
-            "testkey".to_string(),
-            "/dev".to_string(),
-            "/proc".to_string(),
-            "/tmp".to_string(),
-
-        ]);
+        let mut snap = Snapshot::new(
+            Path::new("/proc"),
+            HashType::BLAKE3,
+            vec![
+                "testkey".to_string(),
+                "/dev".to_string(),
+                "/proc".to_string(),
+                "/tmp".to_string(),
+            ],
+        );
         assert!(snap.is_ok());
 
-        let mut snap = Snapshot::new(Path::new("/dev"), HashType::BLAKE3, vec![
-            "testkey".to_string(),
-            "/dev".to_string(),
-            "/proc".to_string(),
-            "/tmp".to_string(),
-
-        ]);
+        let mut snap = Snapshot::new(
+            Path::new("/dev"),
+            HashType::BLAKE3,
+            vec![
+                "testkey".to_string(),
+                "/dev".to_string(),
+                "/proc".to_string(),
+                "/tmp".to_string(),
+            ],
+        );
         assert!(snap.is_ok());
 
-        let mut snap = Snapshot::new(Path::new("/tmp"), HashType::BLAKE3, vec![
-            "testkey".to_string(),
-            "/dev".to_string(),
-            "/proc".to_string(),
-            "/tmp".to_string(),
-
-        ]);
+        let mut snap = Snapshot::new(
+            Path::new("/tmp"),
+            HashType::BLAKE3,
+            vec![
+                "testkey".to_string(),
+                "/dev".to_string(),
+                "/proc".to_string(),
+                "/tmp".to_string(),
+            ],
+        );
         assert!(snap.is_ok());
     }
-
 
     #[test]
     fn blacklist() {
-        let mut snap = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec!["testkey".to_string()]).unwrap();
+        let mut snap = Snapshot::new(
+            Path::new("/etc"),
+            HashType::BLAKE3,
+            vec!["testkey".to_string()],
+        )
+        .unwrap();
         println!("{:#?}", snap.clone().black_list);
         assert_eq!(snap.black_list.pop().unwrap(), "testkey".to_string());
     }
-
 
     #[test]
     fn create_snapshot_blake3() {
@@ -582,11 +593,14 @@ mod tests {
             vec![],
         );
         assert_ne!(
-            compare_snapshots_including_modify_date(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
-                .unwrap()
-                .1
-                .changed
-                .len(),
+            compare_snapshots_including_modify_date(
+                test_snap_change_1.unwrap(),
+                test_snap_change_2.unwrap()
+            )
+            .unwrap()
+            .1
+            .changed
+            .len(),
             3
         );
         fs::remove_dir_all(Path::new("./target/build/test_change_modify/")).unwrap();
