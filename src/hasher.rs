@@ -29,6 +29,7 @@ pub fn hash_file(
     path: &Path,
     file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>,
     hash_type: HashType,
+    verbose: bool,
 ) -> Result<(), Error> {
     let mut full_path = String::new();
     if path.starts_with("./") {
@@ -79,6 +80,10 @@ pub fn hash_file(
     let mut file_hash: Vec<u8> = Vec::new();
     let mut file_buffer: Vec<u8> = Vec::new();
 
+    if let Some(p) =path.to_str() {
+        println!("{}", p)
+    }
+    
     let byte_hash: Result<Vec<u8>, Error> = match hash_type {
         HashType::MD5 => hash_md5(path),
         HashType::SHA3 => hash_sha3(path),

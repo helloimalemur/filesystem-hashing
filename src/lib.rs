@@ -14,28 +14,31 @@ pub fn create_snapshot(
     path: &str,
     hash_type: HashType,
     black_list: Vec<String>,
+    verbose: bool
 ) -> Result<Snapshot, Error> {
-    Snapshot::new(Path::new(path), hash_type, black_list)
+    Snapshot::new(Path::new(path), hash_type, black_list, verbose)
 }
 
 pub fn compare_snapshots(
     left: Snapshot,
     right: Snapshot,
+    verbose: bool
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
-    compare_hashes(left, right)
+    compare_hashes(left, right, verbose)
 }
 
 pub fn compare_snapshots_including_modify_date(
     left: Snapshot,
     right: Snapshot,
+    verbose: bool
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
-    compare_hashes(left, right)
+    compare_hashes(left, right, verbose)
 }
 
-pub fn export_snapshot(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), Error> {
-    export(snapshot, path, overwrite)
+pub fn export_snapshot(snapshot: Snapshot, path: String, overwrite: bool, verbose: bool) -> Result<(), Error> {
+    export(snapshot, path, overwrite, verbose)
 }
 
-pub fn import_snapshot(path: String) -> Result<Snapshot, Error> {
-    import(path)
+pub fn import_snapshot(path: String, verbose: bool) -> Result<Snapshot, Error> {
+    import(path, verbose)
 }
