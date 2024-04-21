@@ -80,6 +80,10 @@ pub fn hash_files(
     let mut file_hash: Vec<u8> = Vec::new();
     let mut file_buffer: Vec<u8> = Vec::new();
 
+    if verbose {
+        println!("{}", path.to_str().unwrap())
+    }
+    
     let byte_hash: Result<Vec<u8>, Error> = match hash_type {
         HashType::MD5 => hash_md5(path),
         HashType::SHA3 => hash_sha3(path),

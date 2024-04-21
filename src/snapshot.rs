@@ -62,7 +62,7 @@ impl Snapshot {
         if verbose {
             println!("Walking Directory: {}", path.to_str().unwrap());
         }
-        
+
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
         let file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> =
             Arc::new(Mutex::new(HashMap::new()));
@@ -74,6 +74,10 @@ impl Snapshot {
             .flatten()
             .for_each(|a| paths.push(Option::from(a)));
 
+        if verbose {
+            println!("Skipping (Blacklisted): {:?}", black_list);
+        }
+        
         while !paths.is_empty() {
             #[allow(clippy::collapsible_match)]
             if let Some(p) = paths.pop() {
@@ -83,9 +87,6 @@ impl Snapshot {
                         if let Some(a) = p.path().to_str() {
                             if a.starts_with(bl) {
                                 blacklisted = true;
-                                if verbose {
-                                    println!("Skipping (Blacklisted): {}", a.to_string());
-                                }
                             }
                         }
                     });
@@ -375,8 +376,8 @@ pub fn import(path: String, verbose: bool) -> Result<Snapshot, Error> {
                 }
             }
         }
-        
-        
+
+
         let black_list: Vec<String> = vec![];
         Ok(Snapshot {
             file_hashes: Arc::new(Mutex::new(fh)),
