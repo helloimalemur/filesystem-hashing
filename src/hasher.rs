@@ -81,7 +81,9 @@ pub fn hash_file(
     let mut file_buffer: Vec<u8> = Vec::new();
 
     if let Some(p) =path.to_str() {
-        println!("{}", p)
+        if verbose {
+            println!("{}", p)
+        }
     }
     
     let byte_hash: Result<Vec<u8>, Error> = match hash_type {

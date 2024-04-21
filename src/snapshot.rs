@@ -457,7 +457,7 @@ mod tests {
 
     #[test]
     fn create_snapshot_blake3() {
-        let test_snap_b3 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![], true);
+        let test_snap_b3 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![], false);
         assert!(test_snap_b3.unwrap().file_hashes.lock().unwrap().len() > 0);
     }
     #[test]
