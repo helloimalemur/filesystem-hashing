@@ -25,7 +25,7 @@ pub struct HashResult {
     pub mtime: i64,
 }
 #[allow(unused)]
-pub fn hash_files(
+pub fn hash_file(
     path: &Path,
     file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>,
     hash_type: HashType,
@@ -80,8 +80,8 @@ pub fn hash_files(
     let mut file_hash: Vec<u8> = Vec::new();
     let mut file_buffer: Vec<u8> = Vec::new();
 
-    if verbose {
-        println!("{}", path.to_str().unwrap())
+    if let Some(p) =path.to_str() {
+        println!("{}", p)
     }
     
     let byte_hash: Result<Vec<u8>, Error> = match hash_type {

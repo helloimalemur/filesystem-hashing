@@ -1,4 +1,4 @@
-use crate::hasher::{hash_files, HashType};
+use crate::hasher::{hash_file, HashType};
 use anyhow::{anyhow, Error};
 use bytes::BytesMut;
 use chrono::Utc;
@@ -96,7 +96,7 @@ impl Snapshot {
                         let handle = thread::spawn(move || {
                             let mut binding = bind.lock();
                             let ht = binding.as_mut().expect("binding error");
-                            if let Err(e) = hash_files(p.path(), ht, hash_type, verbose) {
+                            if let Err(e) = hash_file(p.path(), ht, hash_type, verbose) {
                                 println!("Warning: {e}")
                             }
                         });
