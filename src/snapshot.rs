@@ -56,7 +56,7 @@ impl Snapshot {
             Some(p) => p.to_string(),
         };
         let mut rand = thread_rng();
-        let uuid_int: i128 = rand.gen();
+        let uuid_int: u128 = rand.gen();
         let uuid = uuid_int.to_string();
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
         let file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> =
