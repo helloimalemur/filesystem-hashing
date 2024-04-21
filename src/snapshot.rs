@@ -157,6 +157,7 @@ pub struct SnapshotCompareResult {
 pub fn compare_hashes(
     left: Snapshot,
     right: Snapshot,
+    verbose: bool,
 ) -> Option<(SnapshotChangeType, SnapshotCompareResult)> {
     #[allow(unused)]
     let success = true;
@@ -308,7 +309,7 @@ fn path_resolve(path: String) -> String {
     full_path
 }
 
-pub fn export(snapshot: Snapshot, path: String, overwrite: bool) -> Result<(), Error> {
+pub fn export(snapshot: Snapshot, path: String, overwrite: bool, verbose: bool) -> Result<(), Error> {
     let full_path = path_resolve(path);
 
     let mut fh: Vec<FileMetadata> = vec![];
@@ -358,7 +359,7 @@ fn write_to_file(path_only: String, full_path: String, serialized: String) -> Re
     }
 }
 
-pub fn import(path: String) -> Result<Snapshot, Error> {
+pub fn import(path: String, verbose: bool) -> Result<Snapshot, Error> {
     #[allow(unused)]
     let buffer = BytesMut::new();
     let full_path = path_resolve(path);
@@ -367,13 +368,15 @@ pub fn import(path: String) -> Result<Snapshot, Error> {
 
         let mut fh: HashMap<String, FileMetadata> = HashMap::new();
 
-        // println!("{}", snapshot.file_hashes.len());
-
-        for entry in snapshot.file_hashes {
-            if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
-                // println!("successfully imported: {}", entry.path);
+        if verbose {
+            for entry in snapshot.file_hashes {
+                if let Some(_res) = fh.insert(entry.path.clone(), entry.clone()) {
+                    println!("successfully imported: {}", entry.path);
+                }
             }
         }
+        
+        
         let black_list: Vec<String> = vec![];
         Ok(Snapshot {
             file_hashes: Arc::new(Mutex::new(fh)),
@@ -475,6 +478,7 @@ mod tests {
             test_snap_export.unwrap().clone(),
             "./target/build/out.snapshot".to_string(),
             true,
+            true,
         );
         assert!(Path::new("./target/build/out.snapshot").exists());
         fs::remove_file(Path::new("./target/build/out.snapshot")).unwrap();
@@ -487,8 +491,9 @@ mod tests {
             test_snap_import.unwrap(),
             "./target/build/in.snapshot".to_string(),
             true,
+            true,
         );
-        let snapshot = import("./target/build/in.snapshot".to_string());
+        let snapshot = import("./target/build/in.snapshot".to_string(), true);
         assert!(snapshot.unwrap().file_hashes.lock().unwrap().len() > 0);
         fs::remove_file(Path::new("./target/build/in.snapshot")).unwrap();
     }
@@ -513,7 +518,7 @@ mod tests {
             true,
         );
         assert_eq!(
-            compare_snapshots(test_snap_creation_1.unwrap(), test_snap_creation_2.unwrap())
+            compare_snapshots(test_snap_creation_1.unwrap(), test_snap_creation_2.unwrap(), true)
                 .unwrap()
                 .1
                 .created
@@ -543,7 +548,7 @@ mod tests {
             true,
         );
         assert_eq!(
-            compare_snapshots(test_snap_deletion_2.unwrap(), test_snap_deletion_1.unwrap())
+            compare_snapshots(test_snap_deletion_2.unwrap(), test_snap_deletion_1.unwrap(), true)
                 .unwrap()
                 .1
                 .deleted
@@ -576,7 +581,7 @@ mod tests {
             true,
         );
         assert_eq!(
-            compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
+            compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap(), true)
                 .unwrap()
                 .1
                 .changed
@@ -615,7 +620,8 @@ mod tests {
         assert_ne!(
             compare_snapshots_including_modify_date(
                 test_snap_change_1.unwrap(),
-                test_snap_change_2.unwrap()
+                test_snap_change_2.unwrap(),
+                true
             )
             .unwrap()
             .1
