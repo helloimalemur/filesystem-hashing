@@ -1,4 +1,4 @@
-use crate::hasher::{hash_file, HashType};
+use crate::hasher::{hash_files, HashType};
 use anyhow::{anyhow, Error};
 use bytes::BytesMut;
 use chrono::Utc;
@@ -50,6 +50,7 @@ impl Snapshot {
         path: &Path,
         hash_type: HashType,
         black_list: Vec<String>,
+        verbose: bool,
     ) -> Result<Snapshot, Error> {
         let root_path = match path.to_str() {
             None => "".to_string(),
@@ -58,6 +59,10 @@ impl Snapshot {
         let mut rand = thread_rng();
         let uuid_int: u128 = rand.gen();
         let uuid = uuid_int.to_string();
+        if verbose {
+            println!("Walking Directory: {}", path.to_str().unwrap());
+        }
+        
         let file_paths = walkdir::WalkDir::new(path).sort_by_file_name();
         let file_hashes: Arc<Mutex<HashMap<String, FileMetadata>>> =
             Arc::new(Mutex::new(HashMap::new()));
@@ -77,18 +82,20 @@ impl Snapshot {
                     black_list.iter().for_each(|bl| {
                         if let Some(a) = p.path().to_str() {
                             if a.starts_with(bl) {
-                                blacklisted = true
+                                blacklisted = true;
+                                if verbose {
+                                    println!("Skipping (Blacklisted): {}", a.to_string());
+                                }
                             }
                         }
                     });
 
                     if p.path().is_file() && !blacklisted {
                         let bind = file_hashes.clone();
-
                         let handle = thread::spawn(move || {
                             let mut binding = bind.lock();
                             let ht = binding.as_mut().expect("binding error");
-                            if let Err(e) = hash_file(p.path(), ht, hash_type) {
+                            if let Err(e) = hash_files(p.path(), ht, hash_type, verbose) {
                                 println!("Warning: {e}")
                             }
                         });
@@ -400,6 +407,7 @@ mod tests {
                 "/proc".to_string(),
                 "/tmp".to_string(),
             ],
+            true,
         );
         assert!(snap.is_ok());
 
@@ -412,6 +420,7 @@ mod tests {
                 "/proc".to_string(),
                 "/tmp".to_string(),
             ],
+            true,
         );
         assert!(snap.is_ok());
 
@@ -424,6 +433,7 @@ mod tests {
                 "/proc".to_string(),
                 "/tmp".to_string(),
             ],
+            true,
         );
         assert!(snap.is_ok());
     }
@@ -434,6 +444,7 @@ mod tests {
             Path::new("/etc"),
             HashType::BLAKE3,
             vec!["testkey".to_string()],
+            true,
         )
         .unwrap();
         println!("{:#?}", snap.clone().black_list);
@@ -442,24 +453,24 @@ mod tests {
 
     #[test]
     fn create_snapshot_blake3() {
-        let test_snap_b3 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        let test_snap_b3 = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![], true);
         assert!(test_snap_b3.unwrap().file_hashes.lock().unwrap().len() > 0);
     }
     #[test]
     fn create_snapshot_md5() {
-        let test_snap_md5 = Snapshot::new(Path::new("/etc"), HashType::MD5, vec![]);
+        let test_snap_md5 = Snapshot::new(Path::new("/etc"), HashType::MD5, vec![], true);
         assert!(test_snap_md5.unwrap().file_hashes.lock().unwrap().len() > 0);
     }
     #[test]
     fn create_snapshot_sha3() {
-        let test_snap_sha3 = Snapshot::new(Path::new("/etc"), HashType::SHA3, vec![]);
+        let test_snap_sha3 = Snapshot::new(Path::new("/etc"), HashType::SHA3, vec![], true);
         assert!(test_snap_sha3.unwrap().file_hashes.lock().unwrap().len() > 0);
     }
 
     #[test]
     fn export_snapshot() {
         assert!(!Path::new("./target/build/out.snapshot").exists());
-        let test_snap_export = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        let test_snap_export = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![], true);
         let _ = export(
             test_snap_export.unwrap().clone(),
             "./target/build/out.snapshot".to_string(),
@@ -471,7 +482,7 @@ mod tests {
 
     #[test]
     fn import_snapshot() {
-        let test_snap_import = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![]);
+        let test_snap_import = Snapshot::new(Path::new("/etc"), HashType::BLAKE3, vec![], true);
         let _ = export(
             test_snap_import.unwrap(),
             "./target/build/in.snapshot".to_string(),
@@ -490,6 +501,7 @@ mod tests {
             Path::new("./target/build/test_creation/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         File::create(Path::new("./target/build/test_creation/test1")).unwrap();
         File::create(Path::new("./target/build/test_creation/test2")).unwrap();
@@ -498,6 +510,7 @@ mod tests {
             Path::new("./target/build/test_creation/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         assert_eq!(
             compare_snapshots(test_snap_creation_1.unwrap(), test_snap_creation_2.unwrap())
@@ -518,6 +531,7 @@ mod tests {
             Path::new("./target/build/test_deletion/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         File::create(Path::new("./target/build/test_deletion/test1")).unwrap();
         File::create(Path::new("./target/build/test_deletion/test2")).unwrap();
@@ -526,6 +540,7 @@ mod tests {
             Path::new("./target/build/test_deletion/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         assert_eq!(
             compare_snapshots(test_snap_deletion_2.unwrap(), test_snap_deletion_1.unwrap())
@@ -549,6 +564,7 @@ mod tests {
             Path::new("./target/build/test_change/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         file1.write_all("file1".as_bytes()).unwrap();
         file2.write_all("file2".as_bytes()).unwrap();
@@ -557,6 +573,7 @@ mod tests {
             Path::new("./target/build/test_change/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         assert_eq!(
             compare_snapshots(test_snap_change_1.unwrap(), test_snap_change_2.unwrap())
@@ -580,6 +597,7 @@ mod tests {
             Path::new("./target/build/test_change_modify/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         let _ = fs::remove_file(Path::new("./target/build/test_change_modify/test1")).unwrap();
         let _ = fs::remove_file(Path::new("./target/build/test_change_modify/test2")).unwrap();
@@ -592,6 +610,7 @@ mod tests {
             Path::new("./target/build/test_change_modify/"),
             HashType::BLAKE3,
             vec![],
+            true,
         );
         assert_ne!(
             compare_snapshots_including_modify_date(

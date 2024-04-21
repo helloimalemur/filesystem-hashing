@@ -14,8 +14,9 @@ pub fn create_snapshot(
     path: &str,
     hash_type: HashType,
     black_list: Vec<String>,
+    verbose: bool
 ) -> Result<Snapshot, Error> {
-    Snapshot::new(Path::new(path), hash_type, black_list)
+    Snapshot::new(Path::new(path), hash_type, black_list, verbose)
 }
 
 pub fn compare_snapshots(

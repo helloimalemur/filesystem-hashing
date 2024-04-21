@@ -25,10 +25,11 @@ pub struct HashResult {
     pub mtime: i64,
 }
 #[allow(unused)]
-pub fn hash_file(
+pub fn hash_files(
     path: &Path,
     file_hashes: &mut MutexGuard<HashMap<String, FileMetadata>>,
     hash_type: HashType,
+    verbose: bool,
 ) -> Result<(), Error> {
     let mut full_path = String::new();
     if path.starts_with("./") {
